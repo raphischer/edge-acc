@@ -7,6 +7,7 @@ import tensorflow as tf
 from tensorflow.python.profiler.model_analyzer import profile
 from tensorflow.python.profiler.option_builder import ProfileOptionBuilder
 
+
 KERAS_BUILTINS = [e for e in tf.keras.applications.__dict__.values() if inspect.ismodule(e) and hasattr(e, 'preprocess_input')]
 KERAS_MODELS = {n: e for mod in KERAS_BUILTINS for n, e in mod.__dict__.items() if callable(e) and n[0].isupper()}
 KERAS_PREPR = {n: mod.preprocess_input for mod in KERAS_BUILTINS for n, e in mod.__dict__.items() if callable(e) and n[0].isupper()}
@@ -56,6 +57,8 @@ def prepare_model(model_name, metrics=None, weights='imagenet'):
 
 def load_preprocessing(model_name):
     # prepares function to process one image or batch, based on input size
+    if model_name == 'efficientnet-edgetpu-S_quant':
+        model_name = 'EfficientNetB0'
     model_prepr = BUILTIN_PREPR[model_name]
     input_size = MODEL_CUSTOM_INPUT.get(model_name, (224, 224)) # default input size is 224, but some models have specific sizes
     proc_func = lambda img, label : simple_prepr(img, label, model_prepr, input_size)

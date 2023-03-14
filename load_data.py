@@ -1,3 +1,5 @@
+from tensorflow_datasets.core.utils import gcs_utils
+gcs_utils._is_gcs_disabled = True
 import os
 
 import tensorflow as tf
@@ -7,7 +9,6 @@ def load_data(rootdir='mnt_data', raw_sub='raw', unpacked_sub='unpacked', prepro
     
     raw_dir = os.path.join(rootdir, raw_sub)
     write_dir = os.path.join(rootdir, unpacked_sub)
-
     download_and_prepare_kwargs = {
         'download_dir': write_dir,
         'download_config': tfds.download.DownloadConfig(extract_dir=write_dir, manual_dir=raw_dir),
