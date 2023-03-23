@@ -17,7 +17,41 @@ if -1 in VISIBLE_GPUS:
     VISIBLE_GPUS = VISIBLE_GPUS[:VISIBLE_GPUS.index(-1)]
 
 
-# TODO improve RAPL compability, maybe using https://github.com/djselbeck/rapl-read-ryzen
+def aggregate_monitoring_log(fpath):
+    if not os.path.isfile(fpath):
+        return None
+    results = defaultdict(dict)
+    with open(fpath, 'r') as fc:
+        log = json.load(fc)
+        device_fields = [key for key in list(log.values())[0].keys() if key not in ['timestamp']]
+        for gpu_id, meas in log.items():
+            if 'duration' not in meas:
+                meas['duration'] = [(ts - meas['timestamp'][i-1]) / 1000 if i > 0 else 0 for i, ts in enumerate(meas['timestamp'])]
+            results[gpu_id]['start_unix'] = min(meas['timestamp']) / 1000
+            results[gpu_id]['end_unix'] = max(meas['timestamp']) / 1000
+            results[gpu_id]['start_utc'] = datetime.utcfromtimestamp(results[gpu_id]['start_unix']).strftime('%Y-%m-%d %H:%M:%S')
+            results[gpu_id]['end_utc'] = datetime.utcfromtimestamp(results[gpu_id]['end_unix']).strftime('%Y-%m-%d %H:%M:%S')
+            results[gpu_id]['total_duration'] = results[gpu_id]['end_unix'] - results[gpu_id]['start_unix']
+            results[gpu_id]['nr_measurements'] = len(meas['timestamp'])
+            for field in device_fields:
+                results[gpu_id][field] = {m.__name__: m(meas[field]) for m in [min, max, np.mean, np.std]}
+            for power_key in ['power_usage', 'package-0']:
+                if power_key in results[gpu_id]:
+                    results[gpu_id]['total_power_draw'] = sum([d * p for d, p in zip(log[gpu_id]['duration'], log[gpu_id][power_key])])
+                    break
+            else:
+                results[gpu_id]['total_power_draw'] = -1
+    # aggregate over all devices
+    results['total'] = {
+        'start_unix': min([val['start_unix'] for val in results.values()]),
+        'end_unix': max([val['end_unix'] for val in results.values()]),
+        'nr_measurements': sum([val['nr_measurements'] for val in results.values()]),
+        'total_power_draw': sum([val['total_power_draw'] for val in results.values()]),
+    }
+    results['total']['start_utc'] = datetime.utcfromtimestamp(results['total']['start_unix']).strftime('%Y-%m-%d %H:%M:%S')
+    results['total']['end_utc'] = datetime.utcfromtimestamp(results['total']['end_unix']).strftime('%Y-%m-%d %H:%M:%S')
+    results['total']['total_duration'] = results['total']['end_unix'] - results['total']['start_unix']
+    return results
 
 
 def aggregate_log(fpath):
@@ -58,7 +92,7 @@ def aggregate_log(fpath):
 
 
 def get_processor_name():
-    if platform.system() == "Windows":
+    if platform.system() == "Windows" or platform.system() == "Darwin": 
         return platform.processor()
     elif platform.system() == "Linux":
         command = "cat /proc/cpuinfo"

@@ -37,6 +37,13 @@ def fix_seed(seed):
     python_random.seed(seed)
     return seed
 
+def read_json(filepath):
+    with open(filepath, 'r') as logf:
+        return json.load(logf)
+        
+def read_txt(filepath):
+    with open(filepath, 'r') as reqf:
+        return [line.strip() for line in reqf.readlines()]
 
 def create_output_dir(dir=None, prefix='', config=None):
     if dir is None:
@@ -82,3 +89,5 @@ class Logger(object):
     def close(self):
         self.log.close()
         sys.stdout = self.terminal
+
+   

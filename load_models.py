@@ -4,8 +4,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.profiler.model_analyzer import profile
-from tensorflow.python.profiler.option_builder import ProfileOptionBuilder
+
 
 
 KERAS_BUILTINS = [e for e in tf.keras.applications.__dict__.values() if inspect.ismodule(e) and hasattr(e, 'preprocess_input')]
@@ -40,6 +39,8 @@ MODEL_CUSTOM_INPUT = {**INCEPTION_INPUT, **EFFICIENT_INPUT, **NASNET_INPUT}
 
 
 def prepare_model(model_name, metrics=None, weights='imagenet'):
+    from tensorflow.python.profiler.model_analyzer import profile
+    from tensorflow.python.profiler.option_builder import ProfileOptionBuilder
     if metrics is None:
         metrics = ['sparse_categorical_accuracy', 'sparse_top_k_categorical_accuracy']
 
@@ -56,6 +57,8 @@ def prepare_model(model_name, metrics=None, weights='imagenet'):
 
 
 def load_preprocessing(model_name):
+    from tensorflow.python.profiler.model_analyzer import profile
+    from tensorflow.python.profiler.option_builder import ProfileOptionBuilder
     # prepares function to process one image or batch, based on input size
     if model_name == 'efficientnet-edgetpu-S_quant':
         model_name = 'EfficientNetB0'
@@ -66,6 +69,8 @@ def load_preprocessing(model_name):
 
 
 def simple_prepr(input, label, model_prepr, input_size):
+    from tensorflow.python.profiler.model_analyzer import profile
+    from tensorflow.python.profiler.option_builder import ProfileOptionBuilder
     i = tf.cast(input, tf.float32) # cast to float
     i = tf.image.resize_with_crop_or_pad(i, input_size[0], input_size[1]) # resize for model input size
     i = model_prepr(i) # call model specific preprocessing
