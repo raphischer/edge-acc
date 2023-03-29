@@ -8,11 +8,11 @@ def createDataset(model_name):
     from load_models import load_preprocessing
     from load_data import load_data
     preprocess = load_preprocessing(model_name)
-    ds, _ = load_data(preprocess=preprocess, n_batches= 640, batch_size=1)
+    ds, _ = load_data(preprocess=preprocess, n_batches= 3200, batch_size=1)
     y = np.concatenate([y for x, y in ds], axis=0)
     x = np.concatenate([x for x, y in ds], axis=0)
 
-    for i in range(0,640):
+    for i in range(0,3200):
         labeldir = os.path.join(imageDataDir,str(y[i]))
         if not os.path.exists(labeldir):
             os.makedirs(labeldir)

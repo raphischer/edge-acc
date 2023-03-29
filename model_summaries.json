@@ -1,0 +1,212 @@
+{
+    "DenseNet121": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "8062504",
+        "Trainable params": "7978856",
+        "Non-trainable params": "83648"
+    },
+    "DenseNet169": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "14307880",
+        "Trainable params": "14149480",
+        "Non-trainable params": "158400"
+    },
+    "DenseNet201": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "20242984",
+        "Trainable params": "20013928",
+        "Non-trainable params": "229056"
+    },
+    "EfficientNetB0": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "5330571",
+        "Trainable params": "5288548",
+        "Non-trainable params": "42023"
+    },
+    "EfficientNetB1": {
+        "Input_Shape": "(None, 240, 240, 3)",
+        "Total params": "7856239",
+        "Trainable params": "7794184",
+        "Non-trainable params": "62055"
+    },
+    "EfficientNetB2": {
+        "Input_Shape": "(None, 260, 260, 3)",
+        "Total params": "9177569",
+        "Trainable params": "9109994",
+        "Non-trainable params": "67575"
+    },
+    "EfficientNetB3": {
+        "Input_Shape": "(None, 300, 300, 3)",
+        "Total params": "12320535",
+        "Trainable params": "12233232",
+        "Non-trainable params": "87303"
+    },
+    "EfficientNetB4": {
+        "Input_Shape": "(None, 380, 380, 3)",
+        "Total params": "19466823",
+        "Trainable params": "19341616",
+        "Non-trainable params": "125207"
+    },
+    "EfficientNetB5": {
+        "Input_Shape": "(None, 456, 456, 3)",
+        "Total params": "30562527",
+        "Trainable params": "30389784",
+        "Non-trainable params": "172743"
+    },
+    "EfficientNetB6": {
+        "Input_Shape": "(None, 528, 528, 3)",
+        "Total params": "43265143",
+        "Trainable params": "43040704",
+        "Non-trainable params": "224439"
+    },
+    "EfficientNetB7": {
+        "Input_Shape": "(None, 600, 600, 3)",
+        "Total params": "66658687",
+        "Trainable params": "66347960",
+        "Non-trainable params": "310727"
+    },
+    "EfficientNetV2B0": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "7200312",
+        "Trainable params": "7139704",
+        "Non-trainable params": "60608"
+    },
+    "EfficientNetV2B1": {
+        "Input_Shape": "(None, 240, 240, 3)",
+        "Total params": "8212124",
+        "Trainable params": "8141052",
+        "Non-trainable params": "71072"
+    },
+    "EfficientNetV2B2": {
+        "Input_Shape": "(None, 260, 260, 3)",
+        "Total params": "10178374",
+        "Trainable params": "10096086",
+        "Non-trainable params": "82288"
+    },
+    "EfficientNetV2B3": {
+        "Input_Shape": "(None, 300, 300, 3)",
+        "Total params": "14467622",
+        "Trainable params": "14358406",
+        "Non-trainable params": "109216"
+    },
+    "EfficientNetV2L": {
+        "Input_Shape": "(None, 480, 480, 3)",
+        "Total params": "119027848",
+        "Trainable params": "118515272",
+        "Non-trainable params": "512576"
+    },
+    "EfficientNetV2M": {
+        "Input_Shape": "(None, 480, 480, 3)",
+        "Total params": "54431388",
+        "Trainable params": "54139356",
+        "Non-trainable params": "292032"
+    },
+    "EfficientNetV2S": {
+        "Input_Shape": "(None, 384, 384, 3)",
+        "Total params": "21612360",
+        "Trainable params": "21458488",
+        "Non-trainable params": "153872"
+    },
+    "InceptionResNetV2": {
+        "Input_Shape": "(None, 299, 299, 3)",
+        "Total params": "55873736",
+        "Trainable params": "55813192",
+        "Non-trainable params": "60544"
+    },
+    "InceptionV3": {
+        "Input_Shape": "(None, 299, 299, 3)",
+        "Total params": "23851784",
+        "Trainable params": "23817352",
+        "Non-trainable params": "34432"
+    },
+    "MobileNet": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "4253864",
+        "Trainable params": "4231976",
+        "Non-trainable params": "21888"
+    },
+    "MobileNetV2": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "3538984",
+        "Trainable params": "3504872",
+        "Non-trainable params": "34112"
+    },
+    "NASNetLarge": {
+        "Input_Shape": "(None, 331, 331, 3)",
+        "Total params": "88949818",
+        "Trainable params": "88753150",
+        "Non-trainable params": "196668"
+    },
+    "NASNetMobile": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "5326716",
+        "Trainable params": "5289978",
+        "Non-trainable params": "36738"
+    },
+    "ResNet101": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "44707176",
+        "Trainable params": "44601832",
+        "Non-trainable params": "105344"
+    },
+    "ResNet152": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "60419944",
+        "Trainable params": "60268520",
+        "Non-trainable params": "151424"
+    },
+    "ResNet50": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "25636712",
+        "Trainable params": "25583592",
+        "Non-trainable params": "53120"
+    },
+    "ResNet101V2": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "44675560",
+        "Trainable params": "44577896",
+        "Non-trainable params": "97664"
+    },
+    "ResNet152V2": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "60380648",
+        "Trainable params": "60236904",
+        "Non-trainable params": "143744"
+    },
+    "ResNet50V2": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "25613800",
+        "Trainable params": "25568360",
+        "Non-trainable params": "45440"
+    },
+    "VGG16": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "138357544",
+        "Trainable params": "138357544",
+        "Non-trainable params": "0"
+    },
+    "VGG19": {
+        "Input_Shape": "(None, 224, 224, 3)",
+        "Total params": "143667240",
+        "Trainable params": "143667240",
+        "Non-trainable params": "0"
+    },
+    "Xception": {
+        "Input_Shape": "(None, 299, 299, 3)",
+        "Total params": "22910480",
+        "Trainable params": "22855952",
+        "Non-trainable params": "54528"
+    },
+    "MobileNetV3Large": {
+        "Input_Shape": "(None, None, None, 3)",
+        "Total params": "5507432",
+        "Trainable params": "5483032",
+        "Non-trainable params": "24400"
+    },
+    "MobileNetV3Small": {
+        "Input_Shape": "(None, None, None, 3)",
+        "Total params": "2554968",
+        "Trainable params": "2542856",
+        "Non-trainable params": "12112"
+    }
+}

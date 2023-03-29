@@ -2,19 +2,26 @@
 
 import argparse
 import json
-
+import os
 
 PROPERTIES = {
     'meta': {
         'task': lambda log: log['directory_name'].split('_')[0],
         'dataset': lambda log: log['validation_results']['dataset'],
         'model': lambda log: log['config']['modelname'],
-        'backend': lambda log: log['config']['backend']
+        'backend': lambda log: log['config']['backend'],
+        'number_of_operations':lambda log: extract_edgetpu_compiler_data(log)[0],
+        'number_of_unmapped_operations':lambda log: extract_edgetpu_compiler_data(log)[1],
+        'input_shape': lambda log: extract_model_meta_data(log)[0],
+        'total_parameters':lambda log: extract_model_meta_data(log)[1],
+        'trainable_parameters':lambda log: extract_model_meta_data(log)[2],
+        'non_trainable_parameters': lambda log: extract_model_meta_data(log)[3]
+
     },
 
     
     'infer': {
-        'running_time': lambda log: log['emissions']['duration']['0'],# / log['validation_results']['validation_size'],
+        'running_time': lambda log: log['emissions']['duration']['0'] / log['validation_results']['validation_size'],
         'power_draw': lambda log: log['emissions']['energy_consumed']['0'] * 3.6e6 / log['validation_results']['validation_size'],
         'Accuracy': lambda log: log['validation_results']['accuracy'],
         'validation_size':lambda log: log['validation_results']['validation_size'],
@@ -22,6 +29,26 @@ PROPERTIES = {
     }
 }
 
+def extract_model_meta_data(log):
+
+    with open(os.path.join(os.getcwd(),'model_summaries.json'), 'r') as meta:
+        meta_dict =  json.load(meta)
+        inputShape = meta_dict[log['config']['modelname']]["Input_Shape"]
+        total_parameters = meta_dict[log['config']['modelname']]["Total params"]
+        trainable_parameters = meta_dict[log['config']['modelname']]["Trainable params"]
+        non_trainable_parameters = meta_dict[log['config']['modelname']]["Non-trainable params"]
+    return inputShape, total_parameters, trainable_parameters, non_trainable_parameters
+
+def extract_edgetpu_compiler_data(log):
+    #print("EXTRACTING EDGETPU COMPILER META DATA")
+    #print(str(log['config']['modelname']))
+    with open(os.path.join(os.getcwd(),'edgetpu_compiler_summaries.json'), 'r') as meta:
+        meta_dict = json.load(meta)
+        operationSum = meta_dict[log['config']['modelname']]['sum_of_operations']
+        unmappedSum = meta_dict[log['config']['modelname']]['unmapped_operations']
+       # print(operationSum)
+        #print(unmappedSum)
+    return operationSum, unmappedSum #int(operationSum), int(unmappedSum)
 
 def extract_architecture(log):
     with open('meta_environment.json', 'r') as meta:

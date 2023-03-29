@@ -154,7 +154,7 @@ if __name__ == '__main__':
                     'duration_ms':duration,
                     'dataset':'ImageNet',
                     'avg_duration_ms': duration/imageCount,
-                    'output_dir': 'mnt_data/staay/monitoring',
+                    'output_dir': 'mnt_data/staay/eval',
                     'datadir': 'mnt_data/staay/image_data/'+model_name,
                     'model': model_name,
                     'backend': args.backend,

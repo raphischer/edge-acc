@@ -22,7 +22,10 @@ def read_monitoring(filepath):
 
 def read_csv(filepath):
     # use dumps and loads to make sure the log can be used with json (all keys in dict should be strings!)
-    return json.loads(json.dumps(pd.read_csv(filepath).to_dict()))
+    try:
+        return json.loads(json.dumps(pd.read_csv(filepath).to_dict()))
+    except: 
+        print("couldn't load "+filepath)
 
 
 def read_log_directory(directory):
@@ -81,13 +84,12 @@ def aggregate_log(log, property_extractors):
                 try:
                     agg_log[key] = func(log)
                 except KeyError as e:
-                    print(f'Error in assessing {key:<15} from {log_name} - {log["config"]["modelname"]} on {log["validation_results"]["dataset"]}!')
                     agg_log[key] = np.nan
     return agg_log
 
 
 def merge_database(database):
-    database['configuration'] = database.aggregate(lambda row: ' - '.join([row['task'], row['dataset'], row['model']]), axis=1)
+    database['configuration'] = database.aggregate(lambda row: ' - '.join([str(row['task']), str(row['dataset']), str(row['model'])]), axis=1)
    # database['environment'] = database.aggregate(lambda row: ' - '.join([row['architecture'], row['software']]), axis=1)
     grouped = database.groupby(['configuration']) #'environment']
     grouped_results = grouped.first() # take first occurence as a start
@@ -148,3 +150,7 @@ def find_sub_database(database, dataset=None, task=None, environment=None):
     if environment is not None:
         database = database[database['environment'] == environment]
     return database
+
+
+database = load_database('/Users/lstaay/Documents/imagenet-on-the-edge/mnt_data/staay/eval')
+database.to_pickle('testdatabase3.pkl')
