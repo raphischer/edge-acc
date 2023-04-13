@@ -60,8 +60,7 @@ def load_preprocessing(model_name):
     from tensorflow.python.profiler.model_analyzer import profile
     from tensorflow.python.profiler.option_builder import ProfileOptionBuilder
     # prepares function to process one image or batch, based on input size
-    if model_name == 'efficientnet-edgetpu-S_quant':
-        model_name = 'EfficientNetB0'
+
     model_prepr = BUILTIN_PREPR[model_name]
     input_size = MODEL_CUSTOM_INPUT.get(model_name, (224, 224)) # default input size is 224, but some models have specific sizes
     proc_func = lambda img, label : simple_prepr(img, label, model_prepr, input_size)

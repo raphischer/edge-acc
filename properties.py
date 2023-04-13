@@ -9,7 +9,7 @@ PROPERTIES = {
         'task': lambda log: log['directory_name'].split('_')[0],
         'dataset': lambda log: log['validation_results']['dataset'],
         'model': lambda log: log['config']['modelname'],
-        'backend': lambda log: log['config']['backend'],
+        'backend': lambda log: log['validation_results']['backend'],
         'number_of_operations':lambda log: extract_edgetpu_compiler_data(log)[0],
         'number_of_unmapped_operations':lambda log: extract_edgetpu_compiler_data(log)[1],
         'input_shape': lambda log: extract_model_meta_data(log)[0],
@@ -23,7 +23,7 @@ PROPERTIES = {
     'infer': {
         'running_time': lambda log: log['emissions']['duration']['0'] / log['validation_results']['validation_size'],
         'power_draw': lambda log: log['emissions']['energy_consumed']['0'] * 3.6e6 / log['validation_results']['validation_size'],
-        'Accuracy': lambda log: log['validation_results']['accuracy'],
+        'accuracy': lambda log: log['validation_results']['accuracy'],
         'validation_size':lambda log: log['validation_results']['validation_size'],
         'batch_size':lambda log: log['validation_results']['batch_size']   
     }

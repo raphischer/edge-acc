@@ -24,14 +24,18 @@ def load_data(rootdir='mnt_data', raw_sub='raw', unpacked_sub='unpacked', prepro
         with_info=True,
         download_and_prepare_kwargs=download_and_prepare_kwargs
     )
-
+   
     if preprocess is not None:
         ds = ds.map(preprocess)
 
+   
     n_gpus = max(len(config.list_physical_devices('GPU')), 1) # if no GPU is available, just use given batch size
     ds = ds.batch(batch_size * n_gpus, drop_remainder=True)
     if n_batches is not None:
         ds = ds.take(n_batches)
-    
+        
+    print('dataset type and shape')
+    print(type(ds))
+    print(ds.shape)
     return ds, info
 

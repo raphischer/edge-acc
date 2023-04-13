@@ -119,9 +119,9 @@ def aggregate_logs(logs, property_extractors_module):
     # aggregate properties per log, build database, and merge to single entries per (configuration X environment) combination
     agg_logs = [ aggregate_log(log, property_extractors) for log in logs ]
     aggregated_logs = pd.DataFrame.from_records(agg_logs)
-    merged_database = merge_database(aggregated_logs)
+    #merged_database = merge_database(aggregated_logs) return merged_database
 
-    return merged_database
+    return aggregated_logs
 
 
 
@@ -135,10 +135,9 @@ def load_database(logdir_root, outout_logdir_merged=None, output_tar_dir=None, p
     for dir in sorted(os.listdir(logdir_root)):
         log = process_directory(os.path.join(logdir_root, dir), outout_logdir_merged, output_tar_dir)
         logs.append(log)
-
+    print(len(logs))
     # aggregate
     aggregated_logs = aggregate_logs(logs, property_extractors_module)
-
     return aggregated_logs
 
 
@@ -152,5 +151,6 @@ def find_sub_database(database, dataset=None, task=None, environment=None):
     return database
 
 
-database = load_database('/Users/lstaay/Documents/imagenet-on-the-edge/mnt_data/staay/eval')
-database.to_pickle('testdatabase3.pkl')
+database = load_database('/Users/lstaay/Documents/imagenet-on-the-edge/mnt_data/staay/eval3')
+print(database.shape)
+database.to_pickle('testdatabase32.pkl')
