@@ -6,8 +6,8 @@ from tflite_support.metadata_writers import writer_utils
 import tensorflow.keras 
 
 
-from load_data import load_data
-from load_models import load_preprocessing, prepare_model#, MODELS
+from helper_scripts.load_data import load_data
+from helper_scripts.load_models import load_preprocessing, prepare_model#, MODELS
 
 
 models_dir='/home/staay/Git/imagenet-on-the-edge/mnt_data/staay/models'

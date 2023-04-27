@@ -20,7 +20,7 @@ for model in MODELS:
     except:
         print("model logs for "+ model+" not found.")
     modelsdict[model]= {'sum_of_operations':totalsum, 'unmapped_operations':unmapped}
-with open('edgetpu_compiler_summaries.json', 'w') as f:
+with open('helper_scripts/edgetpu_compiler_summaries.json', 'w') as f:
     json.dump(modelsdict, f)
      
     # f.write('{')

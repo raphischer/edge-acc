@@ -15,7 +15,7 @@ def createDataset(model_name,x,y):
 
     
     print('start preprocessing '+model_name)
-    from load_models import load_preprocessing
+    from helper_scripts.load_models import load_preprocessing
     if model_name != 'None':
         preprocess = load_preprocessing(model_name)
     else:
@@ -51,7 +51,7 @@ x = list(x_train10) + list(x_test10)
 y = list(y_train10) + list(y_test10)
 for i in range(len(x)):
     x[i] = tf.image.resize(x[i],(224,224))
-    
+print('finished resizing :)')
     
 for model in MODELS:
     createDataset(model,x,y)

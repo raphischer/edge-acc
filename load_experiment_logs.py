@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 
 from monitoring import aggregate_monitoring_log
-from util import basename, PatchedJSONEncoder, read_json, read_txt
+from helper_scripts.util import basename, PatchedJSONEncoder, read_json, read_txt
 
 
 #############################
@@ -102,7 +102,7 @@ def merge_database(database):
 def aggregate_logs(logs, property_extractors_module):
     # import extractors
     if property_extractors_module is None:
-        property_extractors_module = 'properties'
+        property_extractors_module = 'helper_scripts/properties'
     try:
         property_extractors = importlib.import_module(property_extractors_module).PROPERTIES
     except (AttributeError, ImportError) as e:
@@ -151,6 +151,6 @@ def find_sub_database(database, dataset=None, task=None, environment=None):
     return database
 
 
-database = load_database('/Users/lstaay/Documents/imagenet-on-the-edge/mnt_data/staay/eval3')
+database = load_database(os.path.join(os.getcwd(),'mnt_data/staay/eval12000_3'))
 print(database.shape)
-database.to_pickle('testdatabase32.pkl')
+database.to_pickle('result_databases/testdatabase12000_3.pkl')

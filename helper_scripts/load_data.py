@@ -34,8 +34,8 @@ def load_data(rootdir='mnt_data', raw_sub='raw', unpacked_sub='unpacked', prepro
     if n_batches is not None:
         ds = ds.take(n_batches)
         
-    print('dataset type and shape')
-    print(type(ds))
-    print(ds.shape)
+    # print('dataset type and shape')
+    # print(type(ds))
+    # print(ds.shape)
     return ds, info
 

@@ -35,7 +35,7 @@ def createDataset(model_name,count = 3200):
  
 
 
-MODELS = [None, 'DenseNet121', 'DenseNet169', 'DenseNet201', 'EfficientNetB0', 'EfficientNetB1', 'EfficientNetB2', 'EfficientNetB3', 'EfficientNetB4', 'EfficientNetB5', 'EfficientNetB6', 'EfficientNetB7', 'EfficientNetV2B0', 'EfficientNetV2B1', 'EfficientNetV2B2', 'EfficientNetV2B3', 'EfficientNetV2L', 'EfficientNetV2M', 'EfficientNetV2S', 'InceptionResNetV2', 'InceptionV3', 'MobileNet', 'MobileNetV2', 'NASNetLarge', 'NASNetMobile', 'ResNet101', 'ResNet152', 'ResNet50', 'ResNet101V2', 'ResNet152V2', 'ResNet50V2', 'VGG16', 'VGG19', 'Xception', 'MobileNetV3Large', 'MobileNetV3Small']
+MODELS = [None, 'DenseNet121', 'DenseNet169', 'DenseNet201', 'EfficientNetB0', 'InceptionV3', 'MobileNet', 'MobileNetV2', 'NASNetMobile', 'ResNet101', 'ResNet50', 'ResNet101V2',  'ResNet50V2', 'VGG16', 'Xception']
 for model in MODELS:
-    createDataset(model)
+    createDataset(model, count = 12000)
 GOOGLEMODELS = ['efficientnet-edgetpu-L_quant_edgetpu','efficientnet-edgetpu-M_quant_edgetpu', 'efficientnet-edgetpu-S_quant_edgetpu','inception_v1_224_quant_edgetpu.tflite','inception_v2_224_quant_edgetpu.tflite','inception_v3_299_quant_edgetpu.tflite','inception_v4_299_quant_edgetpu.tflite','mobilenet_v1_0.5_160_quant_edgetpu.tflite','google_edgetpu_models/mobilenet_v1_0.25_128_quant_edgetpu','mobilenet_v1_0.75_192_quant_edgetpu','mobilenet_v1_1.0_224_quant_edgetpu','mobilenet_v2_1.0_224_quant_edgetpu','tf2_mobilenet_v1_1.0_224_ptq_edgetpu','tf2_mobilenet_v2_1.0_224_ptq_edgetpu','tf2_mobilenet_v3_edgetpu_1.0_224_ptq_edgetpu','tfhub_tf2_resnet_50_imagenet_ptq_edgetpu']

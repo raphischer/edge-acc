@@ -7,10 +7,10 @@ from PIL import Image
 import os
 import re
 import json
-from util import PatchedJSONEncoder
+from helper_scripts.util import PatchedJSONEncoder
 import pathlib
 from codecarbon import OfflineEmissionsTracker
-from util import create_output_dir
+from helper_scripts.util import create_output_dir
 random.seed(21)
 
 from threading import Thread
@@ -124,7 +124,7 @@ def tflite_inference(model_name,x,targetDir):
 
 
 def tf_inference(model_name,x,targetDir):
-  from load_models import prepare_model
+  from helper_scripts.load_models import prepare_model
   model = prepare_model(model_name) 
   emissions_tracker = OfflineEmissionsTracker(log_level='warning', country_iso_code="DEU", save_to_file=True, output_dir = targetDir)
   x_to_predict = np.stack( x, axis=0 ).squeeze()
@@ -143,7 +143,7 @@ def tf_inference(model_name,x,targetDir):
   return (tflite_end_time - tflite_start_time)*1000, final_predictions
 
 
-def loadData(dataDir,imageCount, dataset):
+def loadData(dataDir,imageCount, dataset = 'imagenet'):
   # Load Images from Numpy Files in DataDir
   if dataset == 'cifar10':
     labelMappingDict = getImagenetLabelDict()
@@ -213,7 +213,7 @@ if __name__ == '__main__':
                     'duration_ms':duration,
                     'dataset':'ImageNet',
                     'avg_duration_ms': duration/imageCount,
-                    'output_dir': 'mnt_data/staay/eval3',
+                    'output_dir': monitoringDir,
                     'datadir': dataDir,
                     'model': model_name,
                     'backend': args.backend,

@@ -31,7 +31,7 @@ PROPERTIES = {
 
 def extract_model_meta_data(log):
 
-    with open(os.path.join(os.getcwd(),'model_summaries.json'), 'r') as meta:
+    with open(os.path.join(os.getcwd(),'helper_scripts','model_summaries.json'), 'r') as meta:
         meta_dict =  json.load(meta)
         inputShape = meta_dict[log['config']['modelname']]["Input_Shape"]
         total_parameters = meta_dict[log['config']['modelname']]["Total params"]
@@ -42,7 +42,7 @@ def extract_model_meta_data(log):
 def extract_edgetpu_compiler_data(log):
     #print("EXTRACTING EDGETPU COMPILER META DATA")
     #print(str(log['config']['modelname']))
-    with open(os.path.join(os.getcwd(),'edgetpu_compiler_summaries.json'), 'r') as meta:
+    with open(os.path.join(os.getcwd(),'helper_scripts','edgetpu_compiler_summaries.json'), 'r') as meta:
         meta_dict = json.load(meta)
         operationSum = meta_dict[log['config']['modelname']]['sum_of_operations']
         unmappedSum = meta_dict[log['config']['modelname']]['unmapped_operations']
