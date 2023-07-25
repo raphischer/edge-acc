@@ -24,7 +24,6 @@ def showImage(img):
 
     Thread(target=show, args=[img]).start()
 
-
 def getImagenetLabelDict():
   cifar_imagenet_mapping_path = os.getcwd()+'/cifar_to_imagenet_classes.txt'
   with open(cifar_imagenet_mapping_path, 'r') as cifar_imagenet_map:
@@ -50,7 +49,6 @@ def calcAccuracy(x,y,imageCount):
       correct = correct + 1
   
   return correct/imageCount
-
 
 def edgetpu_inference(model_name,x,targetDir):
   #print('START EDGETPU')
@@ -91,7 +89,6 @@ def edgetpu_inference(model_name,x,targetDir):
     highest_pred_list.append(labelsArray[np.argmax(classification_result[i])])
   return (tflite_end_time - tflite_start_time)*1000, highest_pred_list
 
-
 def tflite_inference(model_name,x,targetDir):
   import tflite_runtime.interpreter as tflite 
   interpreter = tflite.Interpreter(
@@ -122,7 +119,6 @@ def tflite_inference(model_name,x,targetDir):
     highest_pred_list.append(np.argmax(classification_result[i]))
   return (tflite_end_time - tflite_start_time)*1000, highest_pred_list
 
-
 def tf_inference(model_name,x,targetDir):
   from helper_scripts.load_models import prepare_model
   model = prepare_model(model_name) 
@@ -142,7 +138,6 @@ def tf_inference(model_name,x,targetDir):
     final_predictions.append(labelsArray[np.argmax(prediction[i])])
   return (tflite_end_time - tflite_start_time)*1000, final_predictions
 
-
 def loadData(dataDir,imageCount, dataset = 'imagenet'):
   # Load Images from Numpy Files in DataDir
   if dataset == 'cifar10':
@@ -158,7 +153,7 @@ def loadData(dataDir,imageCount, dataset = 'imagenet'):
           elif dataset == 'cifar10':
             listOfLabels.append(labelMappingDict[str(dir)])
           listOfImages.append(np.load(os.path.join(os.path.join(dataDir,dir,file2))))
-  randomIndices = random.sample(range(0, len(listOfImages)), imageCount)
+  randomIndices = random.sample(range(0, len(listOfImages)), min(imageCount, len(listOfImages)) )
   drawImages = [listOfImages[i]  for i in randomIndices]
   drawLabels = [listOfLabels[i]  for i in randomIndices]
   return drawImages, drawLabels
@@ -167,10 +162,10 @@ def loadData(dataDir,imageCount, dataset = 'imagenet'):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('-mn','--modelname', default='ResNet50', help='Model to view')
-  parser.add_argument('-b',"--backend", default="tflite_edgetpu", type=str, choices=["tflite_edgetpu","tflite","tf_gpu","tf_cpu"], help="machine learning software to use")
+  parser.add_argument('-b',"--backend", default="tflite_edgetpu", type=str, choices=["tflite_edgetpu","tf_gpu","tf_cpu"], help="machine learning software to use")
   parser.add_argument('-ic','--imageCount', default = 320, help="Size of validation dataset")
   parser.add_argument('-md', '--monitoringdir' , default = os.path.join(os.getcwd(),'mnt_data/staay/eval3') )
-  parser.add_argument('-d',"--dataset", default="imagenet", type=str, choices=["imagenet","cifar10","cifar100"], help="dataset to use")
+  parser.add_argument('-d',"--dataset", default="imagenet", type=str, choices=["imagenet"], help="dataset to use")
 
   args = parser.parse_args()
 
@@ -211,7 +206,7 @@ if __name__ == '__main__':
   print('TRUE LABELS '+ str(listOfLabels[1]))
   results = {
                     'duration_ms':duration,
-                    'dataset':'ImageNet',
+                    'dataset':args.dataset,
                     'avg_duration_ms': duration/imageCount,
                     'output_dir': monitoringDir,
                     'datadir': dataDir,
@@ -219,7 +214,8 @@ if __name__ == '__main__':
                     'backend': args.backend,
                     'accuracy': accuracy,
                     'validation_size': imageCount,
-                    'batch_size': 32 if args.backend == 'tf_gpu' or args.backend == 'tf_cpu' else 1
+                    'batch_size': 32 if args.backend == 'tf_gpu' or args.backend == 'tf_cpu' else 1,
+                    'task': 'classification'
                 }
   print(results)
 

@@ -8,7 +8,7 @@ import pkg_resources
 import numpy as np
 import pandas as pd
 
-from monitoring import log_system_info
+from helper_scripts.monitoring import log_system_info
 
 
 def basename(directory):
