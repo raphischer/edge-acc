@@ -1,6 +1,6 @@
 #!/bin/bash
 
-port="2-3" # as shown by lsusb -t: {bus}-{port}(.{subport})
+port="2-1" # as shown by lsusb -t: {bus}-{port}(.{subport})
 
 
 bind_usb() {
