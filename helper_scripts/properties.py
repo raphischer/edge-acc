@@ -6,12 +6,14 @@ import os
 
 PROPERTIES = {
     'meta': {
-        'task': lambda log: log['directory_name'].split('_')[0],
+        'task': 'infer',#lambda log: log['directory_name'].split('_')[0],
         'dataset': lambda log: log['validation_results']['dataset'],
         'model': lambda log: log['config']['modelname'],
-        'backend': lambda log: log['validation_results']['backend'],
-        'number_of_operations':lambda log: extract_edgetpu_compiler_data(log)[0],
-        'number_of_unmapped_operations':lambda log: extract_edgetpu_compiler_data(log)[1],
+        'backend': lambda log: log['validation_results']['backend'], #architecure/software +CORAL statt backend
+        'software': lambda log: extract_software(log),
+        'architecture': lambda log: extract_architecture(log),
+        'number_of_operations':lambda log: extract_edgetpu_compiler_data(log)[0]  if log['validation_results']['backend'] == 'tflite_edgetpu' else '',
+        'number_of_unmapped_operations':lambda log: extract_edgetpu_compiler_data(log)[1] if log['validation_results']['backend'] == 'tflite_edgetpu' else '',
         'input_shape': lambda log: extract_model_meta_data(log)[0],
         'total_parameters':lambda log: extract_model_meta_data(log)[1],
         'trainable_parameters':lambda log: extract_model_meta_data(log)[2],
@@ -20,10 +22,30 @@ PROPERTIES = {
     },
 
     
-    'infer': {
+    'infer_classification': {
+        
+        'running_time': lambda log: log['emissions']['duration']['0'] / log['validation_results']['validation_size'],
+        'power_draw': lambda log: log['emissions']['energy_consumed']['0'] * 3.6e6 / log['validation_results']['validation_size'],
+        'accuracy_k1': lambda log: log['validation_results']['accuracy_k1'],
+        'accuracy_k3': lambda log: log['validation_results']['accuracy_k3'],
+        'accuracy_k5': lambda log: log['validation_results']['accuracy_k5'],
+        'accuracy_k10': lambda log: log['validation_results']['accuracy_k10'],
+        'validation_size':lambda log: log['validation_results']['validation_size'],
+        'batch_size':lambda log: log['validation_results']['batch_size']   
+    },
+    'infer_segmentation': {
+        
         'running_time': lambda log: log['emissions']['duration']['0'] / log['validation_results']['validation_size'],
         'power_draw': lambda log: log['emissions']['energy_consumed']['0'] * 3.6e6 / log['validation_results']['validation_size'],
         'accuracy': lambda log: log['validation_results']['accuracy'],
+        'precision_B': lambda log:log['validation_results']['precision_B'],
+        'recall_B': lambda log:log['validation_results']['recall_B'],
+        'mAP50_B': lambda log:log['validation_results']['mAP50_B'],
+        'mAP50_95_B': lambda log:log['validation_results']['mAP50_95_B'],
+        'precision_M': lambda log:log['validation_results']['precision_M'],
+        'recall_M': lambda log:log['validation_results']['recall_M'],
+        'mAP50_M': lambda log:log['validation_results']['mAP50_M'],
+        'mAP50_95_M': lambda log:log['validation_results']['mAP50_95_M'],
         'validation_size':lambda log: log['validation_results']['validation_size'],
         'batch_size':lambda log: log['validation_results']['batch_size']   
     }
@@ -51,7 +73,7 @@ def extract_edgetpu_compiler_data(log):
     return operationSum, unmappedSum #int(operationSum), int(unmappedSum)
 
 def extract_architecture(log):
-    with open('meta_environment.json', 'r') as meta:
+    with open(os.path.join(os.getcwd(),'helper_scripts','meta_environment.json'), 'r') as meta:
         processor_shortforms = json.load(meta)['processor_shortforms']
     if 'GPU' in log['execution_platform']:
         n_gpus = len(log['execution_platform']['GPU'])
@@ -59,27 +81,32 @@ def extract_architecture(log):
         name = f'{gpu_name} x{n_gpus}' if n_gpus > 1 else gpu_name
     else:
         name = processor_shortforms[log['execution_platform']['Processor']]
+    if log['config']['backend'] == "tflite_edgetpu":
+        name = name + ' + GOOGLE CORAL USB ACCELERATOR'
+
     return name
 
 
 def extract_software(log):
-    with open('meta_environment.json', 'r') as meta:
+    backend_name = log['config']['backend']
+    with open(os.path.join(os.getcwd(),'helper_scripts','meta_environment.json'), 'r')  as meta:
         ml_backends = json.load(meta)['ml_backends']
-    if 'backend' in log['config']:
-        backend_name = log['config']['backend']
-    else:
-        backend_name = list(ml_backends.keys())[0]
-    backend_meta = ml_backends[backend_name]
-    backend_version = 'n.a.'
-    for package in backend_meta["Packages"]:
-        for req in log['requirements']:
-            if req.split('==')[0].replace('-', '_') == package.replace('-', '_'):
-                backend_version = req.split('==')[1]
-                break
-        else:
-            continue
-        break
-    return f'{backend_name} {backend_version}'
+        good_name = ml_backends[backend_name]['Good_Name'][0]
+
+    #     backend_name = log['config']['backend']
+    
+    # backend_meta = ml_backends[backend_name]
+    # backend_version = 'n.a.'
+    # for package in backend_meta["Packages"]:
+    #     for req in log['requirements']:
+    #         if req.split('==')[0].replace('-', '_') == package.replace('-', '_'):
+    #             backend_version = req.split('==')[1]
+    #             break
+    #     else:
+    #         continue
+    #     break
+    #return f'{backend_name} {backend_version}'
+    return good_name
 
 
 if __name__ == '__main__':

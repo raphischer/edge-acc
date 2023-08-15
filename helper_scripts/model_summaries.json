@@ -212,14 +212,14 @@
     "yolov8n-seg": {
         "Input_Shape": "(1, 640, 640, 3)",
         "Total params": "3409968",
-        "Trainable params": "2542856",
-        "Non-trainable params": "12112"
+        "Trainable params": "",
+        "Non-trainable params": ""
     },
     "yolov8m-seg": {
         "Input_Shape": "(1, 640, 640, 3)",
         "Total params": "27285968",
-        "Trainable params": "2542856",
-        "Non-trainable params": "12112"
+        "Trainable params": "",
+        "Non-trainable params": ""
     },
     "yolov8s-seg": {
         "Input_Shape": "(1, 640, 640, 3)",

@@ -41,14 +41,26 @@ def getImagenetLabelDict():
           mappingDict[currentKey] = currentValueList
   return mappingDict
 
-def calcAccuracy(x,y,imageCount):
+def calcAccuracy(highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10,y,imageCount):
   # Without TF because of compatibility issues
-  correct = 0
+  correct_1 = 0
+  correct_3 = 0
+  correct_5 = 0
+  correct_10 = 0
+
   for i in range(0,imageCount):
-    if x[i] in y[i]:
-      correct = correct + 1
-  
-  return correct/imageCount
+    if highest_pred_list_1[i] in y[i]:
+      correct_1 = correct_1 + 1
+    for pred in highest_pred_list_3[i]:
+       if pred in y[i]:
+          correct_3 = correct_3 + 1 
+    for pred in highest_pred_list_5[i]:
+       if pred in y[i]:
+          correct_5 = correct_5 +1
+    for pred in highest_pred_list_10[i]:
+       if pred in y[i]:
+          correct_10 = correct_10 +1
+  return correct_1/imageCount, correct_3/imageCount, correct_5/imageCount, correct_10/imageCount
 
 def edgetpu_inference(model_name,x,targetDir):
   #print('START EDGETPU')
@@ -80,14 +92,29 @@ def edgetpu_inference(model_name,x,targetDir):
           classification_result[i] = interpreter.get_tensor(output_details[0]['index'])
   tflite_end_time = time.time()
   emissions_tracker.stop()
-  highest_pred_list = []
+  final_predictions_1 = []
+  final_predictions_3 = []
+
+  final_predictions_5 = []
+
+  final_predictions_10 = []
+
   workingDir = os.getcwd()
   labelsFilePath =  workingDir +'/mnt_data/unpacked/imagenet2012_subset/1pct/5.0.0/label.labels.txt'
   with open(labelsFilePath) as labelsFile:
       labelsArray = labelsFile.readlines()
   for i in  range(0,imageCount):
-    highest_pred_list.append(labelsArray[np.argmax(classification_result[i])])
-  return (tflite_end_time - tflite_start_time)*1000, highest_pred_list
+    final_predictions_1.append(labelsArray[np.argmax(classification_result[i])])
+    ind3 = np.argpartition(classification_result[i], -3)[-3:]
+    ind5 = np.argpartition(classification_result[i], -5)[-5:]
+    ind10 = np.argpartition(classification_result[i], -10)[-10:]
+
+    
+    final_predictions_3.append([labelsArray[x] for x in ind3])
+    final_predictions_5.append([labelsArray[x] for x in ind5])
+    final_predictions_10.append([labelsArray[x] for x in ind10])
+
+  return (tflite_end_time - tflite_start_time)*1000, final_predictions_1, final_predictions_3, final_predictions_5, final_predictions_10
 
 def tflite_inference(model_name,x,targetDir):
   import tflite_runtime.interpreter as tflite 
@@ -129,30 +156,40 @@ def tf_inference(model_name,x,targetDir):
   prediction = model.predict(x_to_predict, batch_size=32)
   tflite_end_time = time.time()
   emissions_tracker.stop()
-  final_predictions = []
+  final_predictions_1 = []
+  final_predictions_3 = []
+  final_predictions_5 = []
+  final_predictions_10 = []
   workingDir = os.getcwd()
   labelsFilePath =  workingDir +'/mnt_data/unpacked/imagenet2012_subset/1pct/5.0.0/label.labels.txt'
   with open(labelsFilePath) as labelsFile:
       labelsArray = labelsFile.readlines()
   for i in range(0, imageCount):
-    final_predictions.append(labelsArray[np.argmax(prediction[i])])
-  return (tflite_end_time - tflite_start_time)*1000, final_predictions
+    
+    final_predictions_1.append(labelsArray[np.argmax(prediction[i])])
+
+    ind3 = np.argpartition(prediction[i], -3)[-3:]
+    ind5 = np.argpartition(prediction[i], -5)[-5:]
+    ind10 = np.argpartition(prediction[i], -10)[-10:]
+
+    
+    final_predictions_3.append([labelsArray[x] for x in ind3])
+    final_predictions_5.append([labelsArray[x] for x in ind5])
+    final_predictions_10.append([labelsArray[x] for x in ind10])
+
+  return (tflite_end_time - tflite_start_time) * 1000, final_predictions_1, final_predictions_3, final_predictions_5, final_predictions_10
 
 def loadData(dataDir,imageCount, dataset = 'imagenet'):
   # Load Images from Numpy Files in DataDir
-  if dataset == 'cifar10':
-    labelMappingDict = getImagenetLabelDict()
   listOfImages = []
   listOfLabels = []
   for root, dirs, files in os.walk(dataDir):
     for dir in dirs:
       for root2, dirs2, files2 in os.walk(os.path.join(dataDir,dir)):
         for file2 in files2:
-          if dataset == 'imagenet':
+          if len(listOfLabels)<imageCount : ##  WEG
             listOfLabels.append([str(dir)])
-          elif dataset == 'cifar10':
-            listOfLabels.append(labelMappingDict[str(dir)])
-          listOfImages.append(np.load(os.path.join(os.path.join(dataDir,dir,file2))))
+            listOfImages.append(np.load(os.path.join(os.path.join(dataDir,dir,file2))))
   randomIndices = random.sample(range(0, len(listOfImages)), min(imageCount, len(listOfImages)) )
   drawImages = [listOfImages[i]  for i in randomIndices]
   drawLabels = [listOfLabels[i]  for i in randomIndices]
@@ -174,7 +211,7 @@ if __name__ == '__main__':
   imageCount = int(args.imageCount)
   assert imageCount % 32 == 0, f"pick imagecount that is a multiple of 32, got {imageCount}"
   monitoringDir = args.monitoringdir
-  targetDir = create_output_dir(dir = monitoringDir,prefix = 'infer', config =args.__dict__)
+  targetDir = create_output_dir(dir = monitoringDir,prefix = 'infer_classification', config =args.__dict__)
   #targetDir = os.path.join(monitoringDir,model_name, args.backend) #Where to save the monitoring summary
   if args.dataset == 'imagenet':
     dataDir = os.path.join(os.getcwd(),'mnt_data/staay/imagenet_data', model_name)
@@ -188,21 +225,18 @@ if __name__ == '__main__':
   x, listOfLabels = loadData(dataDir,imageCount,dataset = args.dataset)
 
   if args.backend == 'tflite_edgetpu':
-    duration, highest_pred_list = edgetpu_inference(model_name,x,targetDir)     
-    accuracy = calcAccuracy(highest_pred_list,listOfLabels,imageCount)
-  elif args.backend == 'tflite':
-    duration, highest_pred_list = tflite_inference(model_name,x,targetDir)     
-    accuracy = calcAccuracy(highest_pred_list,listOfLabels,imageCount)
+    duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir)      
   elif args.backend == 'tf_gpu' or args.backend == 'tf_cpu':
     if args.backend == 'tf_cpu':
       os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-    duration, highest_pred_list = tf_inference(model_name, x, targetDir)
+    duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir)
 
     #highest_pred_list[1] = listOfLabels[1][1]
-    accuracy = calcAccuracy(highest_pred_list,listOfLabels,imageCount)
+  accuracy_k1, accuracy_k3 ,accuracy_k5 ,accuracy_k10= calcAccuracy(highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10,listOfLabels,imageCount)
   
   
-  print('PREDICTED LABEL '+highest_pred_list[1])
+  print('PREDICTED LABEL 1'+str(highest_pred_list_1[0]))
+  print('PREDICTED LABEL 3'+str(highest_pred_list_3[0]))
   print('TRUE LABELS '+ str(listOfLabels[1]))
   results = {
                     'duration_ms':duration,
@@ -212,7 +246,10 @@ if __name__ == '__main__':
                     'datadir': dataDir,
                     'model': model_name,
                     'backend': args.backend,
-                    'accuracy': accuracy,
+                    'accuracy_k1': accuracy_k1,
+                    'accuracy_k3': accuracy_k3,
+                    'accuracy_k5': accuracy_k5,
+                    'accuracy_k10': accuracy_k10,
                     'validation_size': imageCount,
                     'batch_size': 32 if args.backend == 'tf_gpu' or args.backend == 'tf_cpu' else 1,
                     'task': 'classification'

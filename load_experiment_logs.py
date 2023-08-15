@@ -154,4 +154,5 @@ def find_sub_database(database, dataset=None, task=None, environment=None):
 
 database = load_database(os.path.join(os.getcwd(),'mnt_data/staay/first_segmentation_128_5000'))
 print(database.shape)
-database.to_pickle('result_databases/yolov8_first_segmentation.pkl')
+print(database.columns)
+database.to_pickle('result_databases/yolov8_first_segmentation_expanded.pkl')
