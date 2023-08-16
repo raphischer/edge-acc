@@ -12,8 +12,8 @@ def createDataset(model_name,count = 3200):
         labelsArray = labelsFile.readlines()
     if not os.path.exists(imageDataDir):
         os.makedirs(imageDataDir)
-    from load_models import load_preprocessing
-    from load_data import load_data
+    from helper_scripts.load_models import load_preprocessing
+    from helper_scripts.load_data import load_data
     if model_name != 'None':
         preprocess = load_preprocessing(model_name)
     else:
@@ -33,7 +33,6 @@ def createDataset(model_name,count = 3200):
         np.save(os.path.join(labeldir,str(i)+'.npy'),np.asarray(xlist[i]))
    
  
-
 
 MODELS = [None, 'DenseNet121', 'DenseNet169', 'DenseNet201', 'EfficientNetB0', 'InceptionV3', 'MobileNet', 'MobileNetV2', 'NASNetMobile', 'ResNet101', 'ResNet50', 'ResNet101V2',  'ResNet50V2', 'VGG16', 'Xception']
 for model in MODELS:

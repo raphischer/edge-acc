@@ -28,7 +28,7 @@ random.seed(21)
 
 
 
-def edgetpu_inference(model_name, dataset, targetDir):
+def edgetpu_inference(model_name, dataset, targetDir, datadir):
   from pycoral.utils import edgetpu # NECESSARY!
   if "8" in model_name: 
     this_task = 'segment'
@@ -40,20 +40,20 @@ def edgetpu_inference(model_name, dataset, targetDir):
   if dataset == "COCO":
     print('START COCO INFERENCE')
     emissions_tracker.start()
-    metrics = model.val('mnt_data/staay/coco.yaml')
+    metrics = model.val(datadir + '/coco.yaml')
     emissions_tracker.stop()
     print('INFERENCE FINISHED')
   else:
     print('START COCO128 INFERENCE')
     emissions_tracker.start()
-    metrics = model.val('mnt_data/staay/coco128-seg.yaml')
+    metrics = model.val(datadir+'/coco128-seg.yaml')
     emissions_tracker.stop()
     print('INFERENCE FINISHED')
     print(metrics)
 
   return  metrics.speed['inference'], metrics.results_dict['metrics/precision(B)'], metrics.results_dict['metrics/recall(B)'], metrics.results_dict['metrics/mAP50(B)'],  metrics.results_dict['metrics/mAP50-95(B)'],metrics.results_dict['metrics/precision(M)'],metrics.results_dict['metrics/recall(M)'],metrics.results_dict['metrics/mAP50(M)'],metrics.results_dict['metrics/mAP50-95(M)']
 
-def tf_inference_cpu(model_name, dataset, targetDir):
+def tf_inference_cpu(model_name, dataset, targetDir, datadir):
   if "8" in model_name: 
     this_task = 'segment'
   else:
@@ -64,19 +64,19 @@ def tf_inference_cpu(model_name, dataset, targetDir):
   if dataset == "COCO":
     print('START COCO INFERENCE')
     emissions_tracker.start()
-    metrics = model.val('mnt_data/staay/coco.yaml',  device='cpu')
+    metrics = model.val(datadir + '/coco.yaml',  device='cpu')
     emissions_tracker.stop()
     print('INFERENCE FINISHED')
   else:
     print('START COCO128 INFERENCE')
     emissions_tracker.start()
-    metrics = model.val('mnt_data/staay/coco128-seg.yaml',  device='cpu')
+    metrics = model.val(datadir + 'coco128-seg.yaml',  device='cpu')
     emissions_tracker.stop()
     print('INFERENCE FINISHED')
 
   return  metrics.speed['inference'], metrics.results_dict['metrics/precision(B)'], metrics.results_dict['metrics/recall(B)'], metrics.results_dict['metrics/mAP50(B)'],  metrics.results_dict['metrics/mAP50-95(B)'],metrics.results_dict['metrics/precision(M)'],metrics.results_dict['metrics/recall(M)'],metrics.results_dict['metrics/mAP50(M)'],metrics.results_dict['metrics/mAP50-95(M)']
 
-def tf_inference_gpu(model_name, dataset, targetDir):
+def tf_inference_gpu(model_name, dataset, targetDir, datadir):
   if "8" in model_name: 
     this_task = 'segment'
   else:
@@ -88,13 +88,13 @@ def tf_inference_gpu(model_name, dataset, targetDir):
     if dataset == "COCO":
       print('START COCO INFERENCE')
       emissions_tracker.start()
-      metrics = model.val('mnt_data/staay/coco.yaml', device=0)
+      metrics = model.val(datadir+'/coco.yaml', device=0)
       emissions_tracker.stop()
       print('INFERENCE FINISHED')
     else:
       print('START COCO128 INFERENCE')
       emissions_tracker.start()
-      metrics = model.val('mnt_data/staay/coco128-seg.yaml', device=0)
+      metrics = model.val(datadir+'coco128-seg.yaml', device=0)
       emissions_tracker.stop()
       print('INFERENCE FINISHED')
 
@@ -103,13 +103,13 @@ def tf_inference_gpu(model_name, dataset, targetDir):
     if dataset == "COCO":
       print('START COCO INFERENCE')
       emissions_tracker.start()
-      metrics = model.val('mnt_data/staay/coco.yaml', device='cpu')
+      metrics = model.val(datadir+'/coco.yaml', device='cpu')
       emissions_tracker.stop()
       print('INFERENCE FINISHED')
     else:
       print('START COCO128 INFERENCE')
       emissions_tracker.start()
-      metrics = model.val('mnt_data/staay/coco128-seg.yaml', device='cpu')
+      metrics = model.val(datadir+'/coco128-seg.yaml', device='cpu')
       emissions_tracker.stop()
       print('INFERENCE FINISHED')
     backend_change = True
@@ -128,10 +128,11 @@ if __name__ == '__main__':
   parser.add_argument('-b',"--backend", default="tflite_edgetpu", type=str, choices=["tflite_edgetpu","tf_gpu","tf_cpu"], help="machine learning software to use")
   parser.add_argument('-md', '--monitoringdir' , default = os.path.join(os.getcwd(),'mnt_data/staay/eval_seg_test') )
   parser.add_argument('-d',"--dataset", default="COCO128", type=str, choices=["COCO","COCO128"], help="dataset to use")
+  parser.add_argument('-dd',"--datadir", default="/tmp/yolo/",choices=["/tmp/yolo/",os.path.join(os.getcwd(),'mnt_data/staay/')], type=str, help="Directory that includes coco.yaml/coco128-seg.yaml (and corresponding data directories")
 
   args = parser.parse_args()
 
-
+  datadir = args.datadir
   model_name = args.modelname
   dataset = args.dataset
   imageCount = 5000 if dataset == "COCO" else 128
@@ -143,13 +144,13 @@ if __name__ == '__main__':
   backend = args.backend
   duration = accuracy = precision_B = recall_B = mAP50_B = mAP50_95_B = precision_M = recall_M = mAP50_M =  mAP50_95_M = 0
   if backend == 'tflite_edgetpu':
-    duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M  = edgetpu_inference(model_name, dataset, targetDir)     
+    duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M  = edgetpu_inference(model_name, dataset, targetDir, datadir)     
   elif backend == 'tf_gpu': # No Multi GPU
-    backend_change, duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M  = tf_inference_gpu(model_name, dataset, targetDir)
+    backend_change, duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M  = tf_inference_gpu(model_name, dataset, targetDir, datadir)
     if backend_change:
       backend = 'tf_cpu'
   elif backend == 'tf_cpu':
-    duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M = tf_inference_cpu(model_name, dataset, targetDir)
+    duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M = tf_inference_cpu(model_name, dataset, targetDir, datadir)
 
    
   
@@ -160,7 +161,7 @@ if __name__ == '__main__':
                     'dataset':dataset,
                     'avg_duration_ms': duration,
                     'output_dir': monitoringDir,
-                    'datadir': os.getcwd()+('/mnt_data/staay/coco' if dataset == "COCO" else '/mnt_data/staay/coco128-seg') ,
+                    'datadir': args.datadir + '/coco' if dataset == "COCO" else args.datadir + '/coco128-seg' ,
                     'model': model_name,
                     'backend': backend,
                     'precision_B': precision_B,

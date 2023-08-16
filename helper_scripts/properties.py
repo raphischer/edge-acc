@@ -6,7 +6,7 @@ import os
 
 PROPERTIES = {
     'meta': {
-        'task': 'infer',#lambda log: log['directory_name'].split('_')[0],
+        'task': lambda log: 'infer',#lambda log: log['directory_name'].split('_')[0],
         'dataset': lambda log: log['validation_results']['dataset'],
         'model': lambda log: log['config']['modelname'],
         'backend': lambda log: log['validation_results']['backend'], #architecure/software +CORAL statt backend
@@ -17,27 +17,25 @@ PROPERTIES = {
         'input_shape': lambda log: extract_model_meta_data(log)[0],
         'total_parameters':lambda log: extract_model_meta_data(log)[1],
         'trainable_parameters':lambda log: extract_model_meta_data(log)[2],
-        'non_trainable_parameters': lambda log: extract_model_meta_data(log)[3]
+        'non_trainable_parameters': lambda log: extract_model_meta_data(log)[3],
+        'running_time': lambda log: log['emissions']['duration']['0'] / log['validation_results']['validation_size'],
+        'power_draw': lambda log: log['emissions']['energy_consumed']['0'] * 3.6e6 / log['validation_results']['validation_size'],
+        'validation_size':lambda log: log['validation_results']['validation_size'],
+        'batch_size':lambda log: log['validation_results']['batch_size']  
+        
 
     },
 
     
     'infer_classification': {
         
-        'running_time': lambda log: log['emissions']['duration']['0'] / log['validation_results']['validation_size'],
-        'power_draw': lambda log: log['emissions']['energy_consumed']['0'] * 3.6e6 / log['validation_results']['validation_size'],
         'accuracy_k1': lambda log: log['validation_results']['accuracy_k1'],
         'accuracy_k3': lambda log: log['validation_results']['accuracy_k3'],
         'accuracy_k5': lambda log: log['validation_results']['accuracy_k5'],
-        'accuracy_k10': lambda log: log['validation_results']['accuracy_k10'],
-        'validation_size':lambda log: log['validation_results']['validation_size'],
-        'batch_size':lambda log: log['validation_results']['batch_size']   
+        'accuracy_k10': lambda log: log['validation_results']['accuracy_k10']
+
     },
     'infer_segmentation': {
-        
-        'running_time': lambda log: log['emissions']['duration']['0'] / log['validation_results']['validation_size'],
-        'power_draw': lambda log: log['emissions']['energy_consumed']['0'] * 3.6e6 / log['validation_results']['validation_size'],
-        'accuracy': lambda log: log['validation_results']['accuracy'],
         'precision_B': lambda log:log['validation_results']['precision_B'],
         'recall_B': lambda log:log['validation_results']['recall_B'],
         'mAP50_B': lambda log:log['validation_results']['mAP50_B'],
@@ -45,9 +43,8 @@ PROPERTIES = {
         'precision_M': lambda log:log['validation_results']['precision_M'],
         'recall_M': lambda log:log['validation_results']['recall_M'],
         'mAP50_M': lambda log:log['validation_results']['mAP50_M'],
-        'mAP50_95_M': lambda log:log['validation_results']['mAP50_95_M'],
-        'validation_size':lambda log: log['validation_results']['validation_size'],
-        'batch_size':lambda log: log['validation_results']['batch_size']   
+        'mAP50_95_M': lambda log:log['validation_results']['mAP50_95_M']
+          
     }
 }
 
