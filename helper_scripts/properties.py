@@ -28,7 +28,6 @@ PROPERTIES = {
 
     
     'infer_classification': {
-        
         'accuracy_k1': lambda log: log['validation_results']['accuracy_k1'],
         'accuracy_k3': lambda log: log['validation_results']['accuracy_k3'],
         'accuracy_k5': lambda log: log['validation_results']['accuracy_k5'],
@@ -70,6 +69,7 @@ def extract_edgetpu_compiler_data(log):
     return operationSum, unmappedSum #int(operationSum), int(unmappedSum)
 
 def extract_architecture(log):
+  
     with open(os.path.join(os.getcwd(),'helper_scripts','meta_environment.json'), 'r') as meta:
         processor_shortforms = json.load(meta)['processor_shortforms']
     if 'GPU' in log['execution_platform']:
@@ -78,9 +78,9 @@ def extract_architecture(log):
         name = f'{gpu_name} x{n_gpus}' if n_gpus > 1 else gpu_name
     else:
         name = processor_shortforms[log['execution_platform']['Processor']]
-    if log['config']['backend'] == "tflite_edgetpu":
-        name = name + ' + GOOGLE CORAL USB ACCELERATOR'
-
+    #if log['config']['backend'] == "tflite_edgetpu":
+        #name = name + ' + GOOGLE CORAL USB ACCELERATOR'
+  
     return name
 
 
@@ -113,7 +113,7 @@ if __name__ == '__main__':
 
     with open(args.logfile, 'r') as f:
         log = json.load(f)
-
+    
     print(args.logfile)
     for task, metrics in PROPERTIES.items():
         if task == 'meta' or log['directory_name'].startswith(task):

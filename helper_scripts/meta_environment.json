@@ -1,8 +1,8 @@
 {
     "ml_backends": {
         "tflite_edgetpu" :{"Good_Name":["TFLITE Model, Google Coral with PyCoral API"]},
-        "tf_cpu" :{"Good_Name":["Tensorflow Saved Model"]},
-        "tf_gpu" :{"Good_Name":["Tensorflow Saved Model"]},
+        "tf_cpu" :{"Good_Name":["Tensorflow (Saved) Model"]},
+        "tf_gpu" :{"Good_Name":["Tensorflow (Saved) Model"]},
         "GluonTS ": {"packages": ["gluonts"]},
         "sklearn": {"packages": ["scikit-learn"]},
         "Scikit-learn": {"packages": ["scikit-learn"]},
@@ -13,6 +13,7 @@
     },
 
     "processor_shortforms": {
+        "i386":"Core i7-5650U",
         "NVIDIA A100-SXM4-40GB": "A100",
         "Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz": "Core i7-6700",
         "Quadro RTX 5000": "RTX 5000",

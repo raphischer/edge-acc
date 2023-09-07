@@ -13,7 +13,7 @@ import json
 from helper_scripts.util import PatchedJSONEncoder
 from helper_scripts.util import create_output_dir
 random.seed(21)
-
+#os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 
 import argparse
@@ -60,6 +60,7 @@ def tf_inference_cpu(model_name, dataset, targetDir, datadir):
     this_task = 'detect'
   os.environ['CUDA_VISIBLE_DEVICES'] = "-1"
   model = YOLO(os.path.join(os.getcwd(),'mnt_data/staay/models/saved_models/'+model_name+'_saved_model'), task = this_task)
+  #model = YOLO('yolov8s-seg.pt', task = this_task)
   emissions_tracker = OfflineEmissionsTracker(log_level='warning', country_iso_code="DEU", save_to_file=True, output_dir = targetDir)
   if dataset == "COCO":
     print('START COCO INFERENCE')
@@ -73,7 +74,7 @@ def tf_inference_cpu(model_name, dataset, targetDir, datadir):
     metrics = model.val(datadir + 'coco128-seg.yaml',  device='cpu')
     emissions_tracker.stop()
     print('INFERENCE FINISHED')
-
+    print(metrics)
   return  metrics.speed['inference'], metrics.results_dict['metrics/precision(B)'], metrics.results_dict['metrics/recall(B)'], metrics.results_dict['metrics/mAP50(B)'],  metrics.results_dict['metrics/mAP50-95(B)'],metrics.results_dict['metrics/precision(M)'],metrics.results_dict['metrics/recall(M)'],metrics.results_dict['metrics/mAP50(M)'],metrics.results_dict['metrics/mAP50-95(M)']
 
 def tf_inference_gpu(model_name, dataset, targetDir, datadir):
@@ -128,11 +129,12 @@ if __name__ == '__main__':
   parser.add_argument('-b',"--backend", default="tflite_edgetpu", type=str, choices=["tflite_edgetpu","tf_gpu","tf_cpu"], help="machine learning software to use")
   parser.add_argument('-md', '--monitoringdir' , default = os.path.join(os.getcwd(),'mnt_data/staay/eval_seg_test') )
   parser.add_argument('-d',"--dataset", default="COCO128", type=str, choices=["COCO","COCO128"], help="dataset to use")
-  parser.add_argument('-dd',"--datadir", default="/tmp/yolo/",choices=["/tmp/yolo/",os.path.join(os.getcwd(),'mnt_data/staay/')], type=str, help="Directory that includes coco.yaml/coco128-seg.yaml (and corresponding data directories")
+  parser.add_argument('-dd',"--datadir", default = os.path.join(os.getcwd(),'mnt_data/staay/'),choices=["/tmp/yolo/",os.path.join(os.getcwd(),'mnt_data/staay/')], type=str, help="Directory that includes coco.yaml/coco128-seg.yaml (and corresponding data directories")
 
   args = parser.parse_args()
 
   datadir = args.datadir
+  print(datadir)
   model_name = args.modelname
   dataset = args.dataset
   imageCount = 5000 if dataset == "COCO" else 128
