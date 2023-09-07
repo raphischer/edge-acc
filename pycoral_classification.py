@@ -12,18 +12,9 @@ import pathlib
 from codecarbon import OfflineEmissionsTracker
 from helper_scripts.util import create_output_dir
 random.seed(21)
-from pynvml import * 
+from pynvml import nvmlInit
 
 from threading import Thread
-import cv2
-
-def showImage(img):
-
-    def show(img):
-        cv2.imshow(str(dt.datetime.today()), img)
-        cv2.waitKey()
-
-    Thread(target=show, args=[img]).start()
 
 def getImagenetLabelDict():
   cifar_imagenet_mapping_path = os.getcwd()+'/cifar_to_imagenet_classes.txt'
@@ -63,13 +54,13 @@ def calcAccuracy(highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5,
           correct_10 = correct_10 +1
   return correct_1/imageCount, correct_3/imageCount, correct_5/imageCount, correct_10/imageCount
 
-def edgetpu_inference(model_name,x,targetDir):
+def edgetpu_inference(model_name,x,targetDir,modDir):
   #print('START EDGETPU')
   from pycoral.utils import edgetpu
   from pycoral.utils import dataset
   from pycoral.adapters import common
   from pycoral.adapters import classify
-  interpreter = edgetpu.make_interpreter(os.path.join(os.getcwd(),'mnt_data/staay/models/edgetpu_models/'+model_name+'_edgetpu.tflite'))
+  interpreter = edgetpu.make_interpreter(os.path.join(modDir, 'edgetpu_models', +model_name+'_edgetpu.tflite'))
   interpreter.allocate_tensors()
   input_details = interpreter.get_input_details()
   output_details = interpreter.get_output_details()
@@ -98,8 +89,7 @@ def edgetpu_inference(model_name,x,targetDir):
   final_predictions_5 = []
   final_predictions_10 = []
 
-  workingDir = os.getcwd()
-  labelsFilePath =  workingDir +'/mnt_data/unpacked/imagenet2012_subset/1pct/5.0.0/label.labels.txt'
+  labelsFilePath =  'label.labels.txt'
   with open(labelsFilePath) as labelsFile:
       labelsArray = labelsFile.readlines()
   for i in  range(0,imageCount):
@@ -129,8 +119,7 @@ def tf_inference(model_name,x,targetDir):
   final_predictions_3 = []
   final_predictions_5 = []
   final_predictions_10 = []
-  workingDir = os.getcwd()
-  labelsFilePath =  workingDir +'/mnt_data/unpacked/imagenet2012_subset/1pct/5.0.0/label.labels.txt'
+  labelsFilePath =  'label.labels.txt'
   with open(labelsFilePath) as labelsFile:
       labelsArray = labelsFile.readlines()
   for i in range(0, imageCount):
@@ -167,13 +156,17 @@ def loadData(dataDir,imageCount, dataset = 'imagenet'):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('-mn','--modelname', default='ResNet50', help='Model to view')
-  parser.add_argument('-b',"--backend", default="tflite_edgetpu", type=str, choices=["tflite_edgetpu","tf_gpu","tf_cpu"], help="machine learning software to use") # "all" currently not working due to tfds/tf/pycoral Interpreter wrapper bug
+  parser.add_argument('-b',"--backend", default="tf_cpu", type=str, choices=["tflite_edgetpu","tf_gpu","tf_cpu"], help="machine learning software to use") # "all" currently not working due to tfds/tf/pycoral Interpreter wrapper bug
   parser.add_argument('-ic','--imageCount', default = 320, help="Size of validation dataset")
-  parser.add_argument('-md', '--monitoringdir' , default = os.path.join(os.getcwd(),'mnt_data/staay/eval3') )
+  parser.add_argument('-md', '--monitoringdir' , default = os.path.join(os.getcwd(),'eval1') )
+  parser.add_argument('-dd', '--datadir' , default = 'mnt_data/staay/imagenet_data' )
+  parser.add_argument('-modd', '--modeldir' , default = 'mnt_data/staay/models/' )
+
 
   args = parser.parse_args()
   highest_pred_list_1 =  highest_pred_list_3 = highest_pred_list_5 = highest_pred_list_10 = []
   duration = 0
+  dataDir = os.path.join(args.datadir, args.modelname)
   if args.backend != "all":
 
     backend = args.backend
@@ -182,7 +175,6 @@ if __name__ == '__main__':
     imageCount = int(args.imageCount)
     assert imageCount % 32 == 0, f"pick imagecount that is a multiple of 32, got {imageCount}"
     monitoringDir = args.monitoringdir
-    dataDir = os.path.join(os.getcwd(),'mnt_data/staay/imagenet_data', model_name)
     targetDir = create_output_dir(dir = monitoringDir,prefix = 'infer_classification', config =args.__dict__)
     #targetDir = os.path.join(monitoringDir,model_name, args.backend) #Where to save the monitoring summary
     
@@ -193,7 +185,7 @@ if __name__ == '__main__':
     
     x, listOfLabels = loadData(dataDir,imageCount,dataset = "imagenet")
     if backend == 'tflite_edgetpu':
-      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir)      
+      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir, args.modeldir)      
     elif backend == 'tf_gpu' :
       try: 
         nvmlInit() # Will throw an exception if there is no corresponding NVML Shared Library
@@ -240,7 +232,6 @@ if __name__ == '__main__':
       imageCount = int(args.imageCount)
       assert imageCount % 32 == 0, f"pick imagecount that is a multiple of 32, got {imageCount}"
       monitoringDir = args.monitoringdir
-      dataDir = os.path.join(os.getcwd(),'mnt_data/staay/imagenet_data', model_name)
       targetDir = create_output_dir(dir = monitoringDir,prefix = 'infer_classification', config =args.__dict__)
       #targetDir = os.path.join(monitoringDir,model_name, args.backend) #Where to save the monitoring summary
       
@@ -250,7 +241,7 @@ if __name__ == '__main__':
       x, listOfLabels = loadData(dataDir,imageCount,dataset = "imagenet")
       for backend in ["tflite_edgetpu","tf_gpu","tf_cpu"]:
         if backend == 'tflite_edgetpu':
-          duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir)      
+          duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir, args.modeldir)      
         elif backend == 'tf_gpu' :
           try: 
             nvmlInit() # Will throw an exception if there is no corresponding NVML Shared Library
