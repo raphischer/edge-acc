@@ -60,7 +60,7 @@ def edgetpu_inference(model_name,x,targetDir,modDir):
   from pycoral.utils import dataset
   from pycoral.adapters import common
   from pycoral.adapters import classify
-  interpreter = edgetpu.make_interpreter(os.path.join(modDir, 'edgetpu_models', +model_name+'_edgetpu.tflite'))
+  interpreter = edgetpu.make_interpreter(os.path.join(modDir, 'edgetpu_models', model_name + '_edgetpu.tflite'))
   interpreter.allocate_tensors()
   input_details = interpreter.get_input_details()
   output_details = interpreter.get_output_details()
