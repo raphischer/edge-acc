@@ -164,3 +164,6 @@ runs/*
 datasets/*
 logs/*
 .vscode/*
+l_openvino_toolkit_ubuntu20_2022.3.1.9227.cf2c7da5689_x86_64/*
+openvino_env/*
+GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
