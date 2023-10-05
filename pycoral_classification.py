@@ -16,40 +16,28 @@ from pynvml import nvmlInit
 
 from threading import Thread
 
-def getImagenetLabelDict():
-  cifar_imagenet_mapping_path = os.getcwd()+'/cifar_to_imagenet_classes.txt'
-  with open(cifar_imagenet_mapping_path, 'r') as cifar_imagenet_map:
-          label_lines = cifar_imagenet_map.readlines()
-          mappingDict = {}
-          currentValueList = []
-          currentKey  = label_lines[0][:-1]
-          for line in label_lines[1:]:
-              if not line.startswith('-'):
-                      mappingDict[currentKey] = currentValueList
-                      currentKey = line[:-1]
-                      currentValueList = []
-              elif line.startswith('-'):
-                  currentValueList.append(re.findall('n\d+:',line)[0][:-1])
-          mappingDict[currentKey] = currentValueList
-  return mappingDict
 
 def calcAccuracy(highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10,y,imageCount):
   # Without TF because of compatibility issues
+  highest_pred_list_1_stripped = [s.strip('\n') for s in highest_pred_list_1]
+  highest_pred_list_3_stripped = [[e.strip('\n') for e in s ]for s in highest_pred_list_3]
+  highest_pred_list_5_stripped = [[e.strip('\n') for e in s ] for s in highest_pred_list_5]
+  highest_pred_list_10_stripped = [[e.strip('\n') for e in s ] for s in highest_pred_list_10]
   correct_1 = 0
   correct_3 = 0
   correct_5 = 0
   correct_10 = 0
 
   for i in range(0,imageCount):
-    if highest_pred_list_1[i] in y[i]:
+    if highest_pred_list_1_stripped[i] in y[i]:
       correct_1 = correct_1 + 1
-    for pred in highest_pred_list_3[i]:
+    for pred in highest_pred_list_3_stripped[i]:
        if pred in y[i]:
           correct_3 = correct_3 + 1 
-    for pred in highest_pred_list_5[i]:
+    for pred in highest_pred_list_5_stripped[i]:
        if pred in y[i]:
           correct_5 = correct_5 +1
-    for pred in highest_pred_list_10[i]:
+    for pred in highest_pred_list_10_stripped[i]:
        if pred in y[i]:
           correct_10 = correct_10 +1
   return correct_1/imageCount, correct_3/imageCount, correct_5/imageCount, correct_10/imageCount
@@ -82,6 +70,53 @@ def edgetpu_inference(model_name,x,targetDir,modDir):
           interpreter.set_tensor(input_details[0]['index'], input_data)
           interpreter.invoke()            
           classification_result[i] = interpreter.get_tensor(output_details[0]['index'])
+          print(classification_result[i].shape)
+  tflite_end_time = time.time()
+  emissions_tracker.stop()
+  final_predictions_1 = []
+  final_predictions_3 = []
+  final_predictions_5 = []
+  final_predictions_10 = []
+
+  workingDir = os.getcwd()
+  labelsFilePath =  workingDir +'/mnt_data/unpacked/imagenet2012_subset/1pct/5.0.0/label.labels.txt'
+  with open(labelsFilePath) as labelsFile:
+      labelsArray = labelsFile.readlines()
+  for i in  range(0,imageCount):
+    final_predictions_1.append(labelsArray[np.argmax(classification_result[i])])
+    ind3 = np.argpartition(classification_result[i], -3)[-3:]
+    ind5 = np.argpartition(classification_result[i], -5)[-5:]
+    ind10 = np.argpartition(classification_result[i], -10)[-10:]
+
+    
+    final_predictions_3.append([labelsArray[x] for x in ind3])
+    final_predictions_5.append([labelsArray[x] for x in ind5])
+    final_predictions_10.append([labelsArray[x] for x in ind10])
+
+  return (tflite_end_time - tflite_start_time)*1000, final_predictions_1, final_predictions_3, final_predictions_5, final_predictions_10
+
+def ncs2_inference(model_name,x,targetDir,modDir):
+  #Make sure to source l_openvino_toolkit_ubuntu20_2022.3.1.9227.cf2c7da5689_x86_64/setupvars.sh
+  print('START NCS2')
+  print(x[0].shape)
+  from openvino.runtime import Core
+  ie = Core()
+
+  classification_model_xml = os.path.join(modDir, 'openVINO', model_name , 'saved_model.xml')
+
+  model = ie.read_model(model=classification_model_xml)
+  compiled_model = ie.compile_model(model=model, device_name="MYRIAD")
+
+  input_layer = compiled_model.input(0)
+  output_layer = compiled_model.output(0)
+  
+  classification_result = np.empty((imageCount,output_layer.shape[1]),dtype=np.float32)
+  emissions_tracker = OfflineEmissionsTracker( log_level='warning', country_iso_code="DEU", save_to_file=True, output_dir = targetDir)
+  emissions_tracker.start()
+  tflite_start_time = time.time()
+  for i in range(0,imageCount):
+          input_data = x[i]#[None,:,:,:]
+          classification_result[i] = compiled_model(input_data)[output_layer]
   tflite_end_time = time.time()
   emissions_tracker.stop()
   final_predictions_1 = []
@@ -119,7 +154,8 @@ def tf_inference(model_name,x,targetDir):
   final_predictions_3 = []
   final_predictions_5 = []
   final_predictions_10 = []
-  labelsFilePath =  'label.labels.txt'
+  workingDir = os.getcwd()
+  labelsFilePath =  workingDir +'/mnt_data/unpacked/imagenet2012_subset/1pct/5.0.0/label.labels.txt'  
   with open(labelsFilePath) as labelsFile:
       labelsArray = labelsFile.readlines()
   for i in range(0, imageCount):
@@ -156,7 +192,7 @@ def loadData(dataDir,imageCount, dataset = 'imagenet'):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('-mn','--modelname', default='ResNet50', help='Model to view')
-  parser.add_argument('-b',"--backend", default="tf_cpu", type=str, choices=["tflite_edgetpu","tf_gpu","tf_cpu"], help="machine learning software to use") # "all" currently not working due to tfds/tf/pycoral Interpreter wrapper bug
+  parser.add_argument('-b',"--backend", default="tf_cpu", type=str, choices=["tflite_edgetpu","tf_gpu","tf_cpu","NCS2"], help="machine learning software to use") # "all" currently not working due to tfds/tf/pycoral Interpreter wrapper bug
   parser.add_argument('-ic','--imageCount', default = 320, help="Size of validation dataset")
   parser.add_argument('-md', '--monitoringdir' , default = os.path.join(os.getcwd(),'eval1') )
   parser.add_argument('-dd', '--datadir' , default = 'mnt_data/staay/imagenet_data' )
@@ -167,114 +203,67 @@ if __name__ == '__main__':
   highest_pred_list_1 =  highest_pred_list_3 = highest_pred_list_5 = highest_pred_list_10 = []
   duration = 0
   dataDir = os.path.join(args.datadir, args.modelname)
-  if args.backend != "all":
+ 
 
-    backend = args.backend
-    failed_GPU_run = False
-    model_name = args.modelname
-    imageCount = int(args.imageCount)
-    assert imageCount % 32 == 0, f"pick imagecount that is a multiple of 32, got {imageCount}"
-    monitoringDir = args.monitoringdir
-    targetDir = create_output_dir(dir = monitoringDir,prefix = 'infer_classification', config =args.__dict__)
-    #targetDir = os.path.join(monitoringDir,model_name, args.backend) #Where to save the monitoring summary
-    
-    if not os.path.exists(targetDir):
-      os.makedirs(targetDir)
+  backend = args.backend
+  failed_GPU_run = False
+  model_name = args.modelname
+  imageCount = int(args.imageCount)
+  assert imageCount % 32 == 0, f"pick imagecount that is a multiple of 32, got {imageCount}"
+  monitoringDir = args.monitoringdir
+  targetDir = create_output_dir(dir = monitoringDir,prefix = 'infer_classification', config =args.__dict__)
+  #targetDir = os.path.join(monitoringDir,model_name, args.backend) #Where to save the monitoring summary
+  
+  if not os.path.exists(targetDir):
+    os.makedirs(targetDir)
 
-    
-    
-    x, listOfLabels = loadData(dataDir,imageCount,dataset = "imagenet")
-    if backend == 'tflite_edgetpu':
-      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir, args.modeldir)      
-    elif backend == 'tf_gpu' :
-      try: 
-        nvmlInit() # Will throw an exception if there is no corresponding NVML Shared Library
-        duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir)
-      except:
-        failed_GPU_run = True # Dont save this run
-        os.remove(targetDir+'/config.json')
-        os.remove(targetDir+'/execution_platform.json')
-        os.remove(targetDir+'/requirements.txt')
-        os.rmdir(targetDir)
-        print('NO GPU Detected')
-    elif backend == 'tf_cpu':
+  
+  
+  x, listOfLabels = loadData(dataDir,imageCount,dataset = "imagenet")
+  if backend == 'tflite_edgetpu':
+    duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir, args.modeldir)    
+  elif backend == 'NCS2':
+    duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = ncs2_inference(model_name,x,targetDir, args.modeldir)    
+  elif backend == 'tf_gpu' :
+    try: 
+      nvmlInit() # Will throw an exception if there is no corresponding NVML Shared Library
       duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir)
-    if not failed_GPU_run:
-      accuracy_k1, accuracy_k3 ,accuracy_k5 ,accuracy_k10 = calcAccuracy(highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10,listOfLabels,imageCount)
+    except:
+      failed_GPU_run = True # Dont save this run
+      os.remove(targetDir+'/config.json')
+      os.remove(targetDir+'/execution_platform.json')
+      os.remove(targetDir+'/requirements.txt')
+      os.rmdir(targetDir)
+      print('NO GPU Detected')
+  elif backend == 'tf_cpu':
+    duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir)
+  if not failed_GPU_run:
+    accuracy_k1, accuracy_k3 ,accuracy_k5 ,accuracy_k10 = calcAccuracy(highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10,listOfLabels,imageCount)
+
+  
+    results = {
+                      'duration_ms':duration,
+                      'dataset':'imagenet',
+                      'avg_duration_ms': duration/imageCount,
+                      'output_dir': monitoringDir,
+                      'datadir': dataDir,
+                      'model': model_name,
+                      'backend': backend,
+                      'accuracy_k1': accuracy_k1,
+                      'accuracy_k3': accuracy_k3,
+                      'accuracy_k5': accuracy_k5,
+                      'accuracy_k10': accuracy_k10,
+                      'validation_size': imageCount,
+                      'batch_size': 32 if backend == 'tf_gpu' or backend == 'tf_cpu' else 1,
+                      'task': 'classification'
+                  }
+    print(results)
+
     
-    
-    
-      results = {
-                        'duration_ms':duration,
-                        'dataset':'imagenet',
-                        'avg_duration_ms': duration/imageCount,
-                        'output_dir': monitoringDir,
-                        'datadir': dataDir,
-                        'model': model_name,
-                        'backend': backend,
-                        'accuracy_k1': accuracy_k1,
-                        'accuracy_k3': accuracy_k3,
-                        'accuracy_k5': accuracy_k5,
-                        'accuracy_k10': accuracy_k10,
-                        'validation_size': imageCount,
-                        'batch_size': 32 if backend == 'tf_gpu' or backend == 'tf_cpu' else 1,
-                        'task': 'classification'
-                    }
-      print(results)
+    with open(os.path.join(targetDir, 'validation_results.json'), 'w') as rf:
+        json.dump(results, rf, indent=4, cls=PatchedJSONEncoder)
+  
+
 
       
-      with open(os.path.join(targetDir, 'validation_results.json'), 'w') as rf:
-          json.dump(results, rf, indent=4, cls=PatchedJSONEncoder)
-    
-  else: # All backends with one data loader
-      failed_GPU_run = False
-      model_name = args.modelname
-      imageCount = int(args.imageCount)
-      assert imageCount % 32 == 0, f"pick imagecount that is a multiple of 32, got {imageCount}"
-      monitoringDir = args.monitoringdir
-      targetDir = create_output_dir(dir = monitoringDir,prefix = 'infer_classification', config =args.__dict__)
-      #targetDir = os.path.join(monitoringDir,model_name, args.backend) #Where to save the monitoring summary
-      
-      if not os.path.exists(targetDir):
-        os.makedirs(targetDir)
-
-      x, listOfLabels = loadData(dataDir,imageCount,dataset = "imagenet")
-      for backend in ["tflite_edgetpu","tf_gpu","tf_cpu"]:
-        if backend == 'tflite_edgetpu':
-          duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir, args.modeldir)      
-        elif backend == 'tf_gpu' :
-          try: 
-            nvmlInit() # Will throw an exception if there is no corresponding NVML Shared Library
-            duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir)
-          except:
-            failed_GPU_run = True # Dont save this run
-            print('NO GPU Detected')
-        elif backend == 'tf_cpu':
-          duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir)
         
-        if not failed_GPU_run:
-          accuracy_k1, accuracy_k3 ,accuracy_k5 ,accuracy_k10 = calcAccuracy(highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10,listOfLabels,imageCount)
-      
-          results = {
-                            'duration_ms':duration,
-                            'dataset':'imagenet',
-                            'avg_duration_ms': duration/imageCount,
-                            'output_dir': monitoringDir,
-                            'datadir': dataDir,
-                            'model': model_name,
-                            'backend': backend,
-                            'accuracy_k1': accuracy_k1,
-                            'accuracy_k3': accuracy_k3,
-                            'accuracy_k5': accuracy_k5,
-                            'accuracy_k10': accuracy_k10,
-                            'validation_size': imageCount,
-                            'batch_size': 32 if backend == 'tf_gpu' or backend == 'tf_cpu' else 1,
-                            'task': 'classification'
-                        }
-          print(results)
-
-        
-          with open(os.path.join(targetDir, 'validation_results.json'), 'w') as rf:
-              json.dump(results, rf, indent=4, cls=PatchedJSONEncoder)
-            
-
