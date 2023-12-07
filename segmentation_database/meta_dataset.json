@@ -1,0 +1,6 @@
+{
+    "imagenet": {
+        "name": "COCO",
+        "url": "https://cocodataset.org/#home"
+    }
+}

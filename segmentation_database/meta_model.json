@@ -1,0 +1,18 @@
+{
+    "yolov8s-seg": {
+        "name": "yolov8s",
+        "epochs": null,
+        "url": "https://github.com/ultralytics/ultralytics"
+    },
+    "yolov8n-seg": {
+        "name": "yolov8n",
+        "epochs": null,
+        "url": "https://github.com/ultralytics/ultralytics"
+    },
+    "yolov8m-seg": {
+        "name": "yolov8m",
+        "epochs": null,
+        "url": "https://github.com/ultralytics/ultralytics"
+    }
+    
+}
