@@ -40,10 +40,10 @@ if __name__ == '__main__':
         print(f'    database {name} has {rated_database.shape} entries')
         databases[name] = ( rated_database, meta, metrics, xaxis_default, yaxis_default, boundaries, real_boundaries, references )
 
-    #if args.mode == 'interactive':
-    #    from mlprops.elex.app import Visualization
-     #   app = Visualization(databases)
-     #   app.run_server(debug=args.debug, host=args.host, port=args.port)
+    if args.mode == 'interactive':
+       from mlprops.elex.app import Visualization
+       app = Visualization(databases)
+       app.run_server(debug=args.debug, host=args.host, port=args.port)
 
     if args.mode == 'paper_results':
         from paper_results import create_all
