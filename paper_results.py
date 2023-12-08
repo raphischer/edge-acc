@@ -18,7 +18,10 @@ from mlprops.elex.graphs import assemble_scatter_data, create_scatter_graph, add
 PLOT_WIDTH = 800
 PLOT_HEIGHT = PLOT_WIDTH // 3
 COLORS = ['#009ee3', '#983082', '#ffbc29', '#35cdb4', '#e82e82', '#59bdf7', '#ec6469', '#706f6f', '#4a4ad8', '#0c122b', '#ffffff']
-
+SEL_DS_TASK = {
+    'ImageNetEff': ('imagenet', 'infer'),
+    'CocoEff': ('coco', 'infer'),
+}
 
 def create_all(databases):
     os.chdir('paper_results')
@@ -30,7 +33,7 @@ def create_all(databases):
     os.remove("dummy.pdf")
 
     # imagenet env trades
-    db_name, ds, task = 'ImageNetEff', 'imagenet', 'infer_imagenet'
+    db_name, ds, task = 'ImageNetEff', 'imagenet', 'infer'
     db, meta, metrics, xdef, ydef, bounds, _, _ = databases[db_name]
     envs = sorted([env for env in pd.unique(db['environment']) if 'Laptop' not in env])
     models = sorted(pd.unique(db['model']).tolist())
@@ -68,5 +71,27 @@ def create_all(databases):
         scatter.show()
         scatter.write_image(f"scatter_{host}.pdf")
 
+    # Star Plots
+    for name, (db, meta, metrics, xdef, ydef, bounds, _, _) in databases.items():
+        ds, task = SEL_DS_TASK[name]
+        db = prop_dict_to_val(db, 'index')
+        ds_name = lookup_meta(meta, ds, subdict='dataset')
+
+        worst = db.sort_values('compound_index').iloc[0]
+        best = db.sort_values('compound_index').iloc[-1]
+        fig = go.Figure()
+        for model, col, m_str in zip([best, worst], [RATING_COLORS[0], RATING_COLORS[4]], ['Best', 'Worst']):
+            mod_name = lookup_meta(meta, model['model'], 'short', 'model')[:18]
+            print(metrics)
+            metr_names = [lookup_meta(meta, metr, 'shortname', 'properties') for metr in metrics[(ds, task)]]
+            fig.add_trace(go.Scatterpolar(
+                r=[model[col] for col in metrics[(ds, task)]], line={'color': col},
+                theta=metr_names, fill='toself', name=f'{mod_name} ({m_str}): {model["compound_index"]:4.2f}'
+            ))
+        fig.update_layout(
+            polar=dict(radialaxis=dict(visible=True)), width=PLOT_WIDTH*0.25, height=PLOT_HEIGHT, title_y=1.0, title_x=0.5, title_text=ds_name,
+            legend=dict( yanchor="bottom", y=1.06, xanchor="center", x=0.5), margin={'l': 30, 'r': 30, 'b': 15, 't': 70}
+        )
+        fig.write_image(f'true_best_{name}.pdf')
 if __name__ == '__main__':
     pass
