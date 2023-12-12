@@ -1,0 +1,15 @@
+,model,backend,architecture,precision_B
+0,yolov8m-seg,,Laptop,0.6947192558022106
+1,yolov8m-seg,,Workstation,0.7075723936243637
+2,yolov8m-seg,EDGE TPU,Laptop,0.5432484219783149
+3,yolov8m-seg,EDGE TPU,Workstation,0.5432484219783149
+4,yolov8m-seg,NCS2,Workstation,0.7076540944266476
+5,yolov8n-seg,,Laptop,0.6210278328827306
+6,yolov8n-seg,,Workstation,0.6210279549846526
+7,yolov8n-seg,EDGE TPU,Laptop,0.4714030060444227
+8,yolov8n-seg,EDGE TPU,Workstation,0.46928502679641076
+9,yolov8n-seg,NCS2,Workstation,0.620128423335595
+10,yolov8s-seg,,Laptop,0.0
+11,yolov8s-seg,,Workstation,0.6924086640637617
+12,yolov8s-seg,EDGE TPU,Laptop,0.613022501869295
+13,yolov8s-seg,EDGE TPU,Workstation,0.5261675426161186
