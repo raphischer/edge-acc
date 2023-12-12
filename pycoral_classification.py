@@ -44,6 +44,7 @@ def calcAccuracy(highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5,
           correct_10 = correct_10 +1
   return correct_1/imageCount, correct_3/imageCount, correct_5/imageCount, correct_10/imageCount
 
+
 def edgetpu_inference(model_name,x,targetDir,modDir):
   #print('START EDGETPU')
   from pycoral.utils import edgetpu
@@ -83,7 +84,7 @@ def edgetpu_inference(model_name,x,targetDir,modDir):
   labelsFilePath =  workingDir +'/mnt_data/unpacked/imagenet2012_subset/1pct/5.0.0/label.labels.txt'
   with open(labelsFilePath) as labelsFile:
       labelsArray = labelsFile.readlines()
-  for i in  range(0,imageCount):
+  for i in range(0,imageCount):
     final_predictions_1.append(labelsArray[np.argmax(classification_result[i])])
     ind3 = np.argpartition(classification_result[i], -3)[-3:]
     ind5 = np.argpartition(classification_result[i], -5)[-5:]
@@ -95,6 +96,7 @@ def edgetpu_inference(model_name,x,targetDir,modDir):
     final_predictions_10.append([labelsArray[x] for x in ind10])
 
   return (tflite_end_time - tflite_start_time)*1000, final_predictions_1, final_predictions_3, final_predictions_5, final_predictions_10
+
 
 def ncs2_inference(model_name,x,targetDir,modDir):
   #Make sure to source l_openvino_toolkit_ubuntu20_2022.3.1.9227.cf2c7da5689_x86_64/setupvars.sh
@@ -115,7 +117,7 @@ def ncs2_inference(model_name,x,targetDir,modDir):
   emissions_tracker = OfflineEmissionsTracker( log_level='warning', country_iso_code="DEU", save_to_file=True, output_dir = targetDir)
   emissions_tracker.start()
   tflite_start_time = time.time()
-  for i in range(0,imageCount):
+  for i in tqdm( range(0, imageCount), 'NCS inference' ):
           input_data = x[i]#[None,:,:,:]
           classification_result[i] = compiled_model(input_data)[output_layer]
   tflite_end_time = time.time()
@@ -128,7 +130,7 @@ def ncs2_inference(model_name,x,targetDir,modDir):
   labelsFilePath =  'label.labels.txt'
   with open(labelsFilePath) as labelsFile:
       labelsArray = labelsFile.readlines()
-  for i in  range(0,imageCount):
+  for i in range(0, imageCount):
     final_predictions_1.append(labelsArray[np.argmax(classification_result[i])])
     ind3 = np.argpartition(classification_result[i], -3)[-3:]
     ind5 = np.argpartition(classification_result[i], -5)[-5:]
@@ -140,6 +142,7 @@ def ncs2_inference(model_name,x,targetDir,modDir):
     final_predictions_10.append([labelsArray[x] for x in ind10])
 
   return (tflite_end_time - tflite_start_time)*1000, final_predictions_1, final_predictions_3, final_predictions_5, final_predictions_10
+
 
 def tf_inference(model_name,x,targetDir):
   from helper_scripts.load_models import prepare_model
@@ -171,6 +174,7 @@ def tf_inference(model_name,x,targetDir):
     final_predictions_10.append([labelsArray[x] for x in ind10])
 
   return (tflite_end_time - tflite_start_time) * 1000, final_predictions_1, final_predictions_3, final_predictions_5, final_predictions_10
+
 
 def loadData(dataDir, imageCount):
   selection_file = f'classification_image_selection_{imageCount}.json'
@@ -208,9 +212,8 @@ if __name__ == '__main__':
   parser.add_argument('-md', '--monitoringdir' , default = os.path.join(os.getcwd(),'eval1') )
   parser.add_argument('-dd', '--datadir' , default = 'mnt_data/staay/imagenet_data' )
   parser.add_argument('-modd', '--modeldir' , default = 'mnt_data/staay/models/' )
-
-
   args = parser.parse_args()
+  
   highest_pred_list_1 =  highest_pred_list_3 = highest_pred_list_5 = highest_pred_list_10 = []
   duration = 0
   dataDir = os.path.join(args.datadir, args.modelname)
