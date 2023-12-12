@@ -147,7 +147,7 @@ def tf_inference(model_name,x,targetDir):
   x_to_predict = np.stack( x, axis=0 ).squeeze()
   emissions_tracker.start()
   tflite_start_time = time.time()
-  prediction = model.predict(x_to_predict, batch_size=32)
+  prediction = model.predict(x_to_predict, batch_size=64)
   tflite_end_time = time.time()
   emissions_tracker.stop()
   final_predictions_1 = []
@@ -254,7 +254,7 @@ if __name__ == '__main__':
                       'accuracy_k5': accuracy_k5,
                       'accuracy_k10': accuracy_k10,
                       'validation_size': imageCount,
-                      'batch_size': 32 if backend == 'tf_gpu' or backend == 'tf_cpu' else 1,
+                      'batch_size': 64 if backend == 'tf_gpu' or backend == 'tf_cpu' else 1,
                       'task': 'classification'
                   }
     print(results)

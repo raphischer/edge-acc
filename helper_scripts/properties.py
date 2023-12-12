@@ -58,15 +58,12 @@ def extract_model_meta_data(log):
     return inputShape, total_parameters, trainable_parameters, non_trainable_parameters
 
 def extract_edgetpu_compiler_data(log):
-    #print("EXTRACTING EDGETPU COMPILER META DATA")
-    #print(str(log['config']['modelname']))
+   
     with open(os.path.join(os.getcwd(),'helper_scripts','edgetpu_compiler_summaries.json'), 'r') as meta:
         meta_dict = json.load(meta)
         operationSum = meta_dict[log['config']['modelname']]['sum_of_operations']
         unmappedSum = meta_dict[log['config']['modelname']]['unmapped_operations']
-       # print(operationSum)
-        #print(unmappedSum)
-    return operationSum, unmappedSum #int(operationSum), int(unmappedSum)
+    return operationSum, unmappedSum 
 
 def extract_architecture(log):
   
