@@ -13,8 +13,8 @@ from codecarbon import OfflineEmissionsTracker
 from helper_scripts.util import create_output_dir
 random.seed(21)
 from pynvml import nvmlInit
-
 from threading import Thread
+from tqdm import tqdm
 
 
 def calcAccuracy(highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10,y,imageCount):
@@ -42,7 +42,7 @@ def calcAccuracy(highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5,
           correct_10 = correct_10 +1
   return correct_1/imageCount, correct_3/imageCount, correct_5/imageCount, correct_10/imageCount
 
-def edgetpu_inference(model_name,x,targetDir,modDir):
+def edgetpu_inference(model_name,x,targetDir,modDir,imageCount):
   #print('START EDGETPU')
   from pycoral.utils import edgetpu
   from pycoral.utils import dataset
@@ -95,7 +95,7 @@ def edgetpu_inference(model_name,x,targetDir,modDir):
 
   return (tflite_end_time - tflite_start_time)*1000, final_predictions_1, final_predictions_3, final_predictions_5, final_predictions_10
 
-def ncs2_inference(model_name,x,targetDir,modDir):
+def ncs2_inference(model_name,x,targetDir,modDir,imageCount):
   #Make sure to source l_openvino_toolkit_debian9_2022.3.1.9227.cf2c7da5689_arm64/setupvars.sh
   #source /opt/intel/openvino_2022.3.1/setupvars.sh
   #source l_openvino_toolkit_ubuntu20_2022.3.1.9227.cf2c7da5689_x86_64/setupvars.sh
@@ -152,7 +152,7 @@ def ncs2_inference(model_name,x,targetDir,modDir):
 
   return (tflite_end_time - tflite_start_time)*1000, final_predictions_1, final_predictions_3, final_predictions_5, final_predictions_10
 
-def tf_inference(model_name,x,targetDir):
+def tf_inference(model_name,x,targetDir, imageCount):
   from helper_scripts.load_models import prepare_model
   model = prepare_model(model_name)
   emissions_tracker = OfflineEmissionsTracker(log_level='warning', country_iso_code="DEU", save_to_file=True, output_dir = targetDir)
@@ -170,10 +170,14 @@ def tf_inference(model_name,x,targetDir):
   labelsFilePath =  workingDir +'/mnt_data/unpacked/imagenet2012_subset/1pct/5.0.0/label.labels.txt'  
   with open(labelsFilePath) as labelsFile:
       labelsArray = labelsFile.readlines()
+  print('labelsArray:')
+  print(len(labelsArray))
+  print(prediction.shape)
+  print(imageCount)
   for i in range(0, imageCount):
-    
+    #print(i)
     final_predictions_1.append(labelsArray[np.argmax(prediction[i])])
-
+    #indices of best n predictions
     ind3 = np.argpartition(prediction[i], -3)[-3:]
     ind5 = np.argpartition(prediction[i], -5)[-5:]
     ind10 = np.argpartition(prediction[i], -10)[-10:]
@@ -184,7 +188,7 @@ def tf_inference(model_name,x,targetDir):
 
   return (tflite_end_time - tflite_start_time) * 1000, final_predictions_1, final_predictions_3, final_predictions_5, final_predictions_10
 
-def tflite_inference(model_name,x,targetDir,modDir):
+def tflite_inference(model_name,x,targetDir,modDir,imageCount):
   import tensorflow as tf
 
   interpreter = tf.lite.Interpreter(model_path = os.path.join(modDir, 'tflite_models', model_name + '.tflite'))
@@ -235,32 +239,42 @@ def tflite_inference(model_name,x,targetDir,modDir):
   return (tflite_end_time - tflite_start_time)*1000, final_predictions_1, final_predictions_3, final_predictions_5, final_predictions_10
 
   
-def loadData(dataDir,imageCount, dataset = 'imagenet'):
-  # Load Images from Numpy Files in DataDir and return sample
-  print('Load Data')
-  listOfImages = []
-  listOfLabels = []
-  for root, dirs, files in os.walk(dataDir):
-    for dir in dirs:
-      for root2, dirs2, files2 in os.walk(os.path.join(dataDir,dir)):
-        for file2 in files2:
-          if len(listOfLabels)<imageCount :
-            listOfLabels.append([str(dir)])
-            listOfImages.append(np.load(os.path.join(os.path.join(dataDir,dir,file2))))
-  randomIndices = random.sample(range(0, len(listOfImages)), min(imageCount, len(listOfImages)) )
-  drawImages = [listOfImages[i]  for i in randomIndices]
-  drawLabels = [listOfLabels[i]  for i in randomIndices]
-  print('Finished Loading Data')
+def loadData(dataDir,imageCount,current_batch_size, macro_batch_size, iteration):
+  print('currentbatch '+str(current_batch_size))
+  selection_file = f'classification_image_selection_{imageCount}.json'
+  if os.path.isfile(selection_file):
+    with open(selection_file, 'r') as jf:
+      selection = json.load(jf)
+  else:
+    # check available data and sample instances
+    selection, full_paths = {}, []
+    for _, dirs, _ in os.walk(dataDir):
+      for dir in dirs:
+        full_paths = full_paths + [os.path.join(dir, fname) for fname in os.listdir(os.path.join(dataDir,dir)) if '.npy' in fname]
+    random_indices = random.sample(range(0, len(full_paths)), imageCount)
+    for idx in random_indices:
+      label, fname = os.path.dirname(full_paths[idx]), os.path.basename(full_paths[idx])
+      if label not in selection:
+        selection[label] = []
+      selection[label].append(fname)
+    with open(selection_file, 'w') as jf:
+       json.dump(selection, jf)
+  # load the data
+  listOfImages, listOfLabels = [], []
+  filecount = -1
+  #load data based on Iteration! saves RAM
+  relevant_selection_range = range(iteration * macro_batch_size,iteration*macro_batch_size + current_batch_size)
+  relevant_selection_slice = slice(iteration * macro_batch_size,iteration*macro_batch_size + current_batch_size)
+  for label, files in tqdm(selection.items(), 'loading data'):
+    listOfLabels = listOfLabels + [[label]] * len(files)
+    for fname in files:
+      filecount += 1
+      if filecount in relevant_selection_range:
+        listOfImages.append(np.load(os.path.join(dataDir, label, fname)))
+  return listOfImages,listOfLabels[relevant_selection_slice]
 
-  return drawImages, drawLabels, listOfImages, listOfLabels
 
-def pickData(imageCount,listOfImages, listOfLabels):
-  print('Pick Data')
-  randomIndices = random.sample(range(0, len(listOfImages)), min(imageCount, len(listOfImages)) )
-  drawImages = [listOfImages[i]  for i in randomIndices]
-  drawLabels = [listOfLabels[i]  for i in randomIndices]
-
-  return drawImages, drawLabels
+  return listOfImages[0:batch_size], listOfLabels[0:batch_size], listOfImages[batch_size:], listOfLabels[batch_size:]
            
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
@@ -270,14 +284,15 @@ if __name__ == '__main__':
   parser.add_argument('-md', '--monitoringdir' , default = os.path.join(os.getcwd(),'raspi_eval') )
   parser.add_argument('-dd', '--datadir' , default = 'mnt_data/staay/imagenet_data' )
   parser.add_argument('-modd', '--modeldir' , default = 'mnt_data/staay/models/' )
+  parser.add_argument('-mbs','--macroBatchSize', default = 192, help="Size of batches for loaded data")
 
-
-  macro_batch_size = 192
+  
   args = parser.parse_args()
+  macro_batch_size = args.macroBatchSize
   iterations = round(int(args.imageCount) / macro_batch_size )
   rest = round(int(args.imageCount) % macro_batch_size )
-  print(iterations)
-  print(rest)
+  print('ITERATIONS '+str(iterations))
+  print('REST '+str(rest))
 
   highest_pred_list_1 =  highest_pred_list_3 = highest_pred_list_5 = highest_pred_list_10 = []
   duration = 0
@@ -297,25 +312,23 @@ if __name__ == '__main__':
     os.makedirs(targetDir)
   print(reversed(range(iterations)))
   for it in reversed(range(iterations+1)):
-    if it == 0:
+    if it == iterations:
       imageCount = rest
     else: 
       imageCount = macro_batch_size
-
-    if it == iterations:
-      x, listOfLabels, listOfImages_og, listOfLabels_og = loadData(dataDir,imageCount,dataset = "imagenet") # Original Daten Laden 
-    else:
-      x, listOfLabels = pickData(imageCount,listOfImages_og, listOfLabels_og) # Batch aus Geladenen Daten holen
-
-
+#dataDir,imageCount,current_batch_size, macro_batch_size, iteration
+    x, listOfLabels = loadData(dataDir,int(args.imageCount),imageCount,macro_batch_size,it) # Original Daten Laden 
+    print(len(x))
+    print(len(listOfLabels))
+    print(imageCount)
     if backend == 'tflite_edgetpu':
-      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir, args.modeldir)    
+      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir, args.modeldir,imageCount)    
     elif backend == 'NCS2':
-      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = ncs2_inference(model_name,x,targetDir, args.modeldir)    
+      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = ncs2_inference(model_name,x,targetDir, args.modeldir,imageCount)    
     elif backend == 'tf_gpu':
       try: 
         nvmlInit() # Will throw an exception if there is no corresponding NVML Shared Library
-        duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir)
+        duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir,imageCount)
       except:
         failed_GPU_run = True # Dont save this run
         os.remove(targetDir+'/config.json')
@@ -324,9 +337,9 @@ if __name__ == '__main__':
         os.rmdir(targetDir)
         print('NO GPU Detected')
     elif backend == 'tf_cpu':
-      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir)
+      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir,imageCount)
     elif backend == 'tflite' :
-      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tflite_inference(model_name, x, targetDir, args.modeldir)
+      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tflite_inference(model_name, x, targetDir, args.modeldir,imageCount)
 
     if not failed_GPU_run:
       accuracy_k1, accuracy_k3 ,accuracy_k5 ,accuracy_k10 = calcAccuracy(highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10,listOfLabels,imageCount)
