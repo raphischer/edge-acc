@@ -83,7 +83,6 @@ def tf_inference_cpu(model_name, dataset, targetDir, datadir, modeldir):
     this_task = 'detect'
   os.environ['CUDA_VISIBLE_DEVICES'] = "-1"
   model = YOLO(os.path.join(modeldir, 'saved_models', model_name+'_saved_model'), task = this_task)
-  #model = YOLO('yolov8s-seg.pt', task = this_task)
   emissions_tracker = OfflineEmissionsTracker(log_level='warning', country_iso_code="DEU", save_to_file=True, output_dir = targetDir)
   if dataset == "COCO":
     print('START COCO INFERENCE')
@@ -202,7 +201,7 @@ if __name__ == '__main__':
                     'mAP50_M' :  mAP50_M,
                     'mAP50_95_M' :mAP50_95_M,
                     'validation_size': imageCount,
-                    'batch_size': 1 if backend == 'tf_gpu' or backend == 'tf_cpu' else 1,
+                    'batch_size': 16 if backend == 'tf_gpu' or backend == 'tf_cpu' else 1,
                     'task': 'segmentation'
                 }
   print(results)
