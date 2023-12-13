@@ -5,27 +5,29 @@
 
 for n in 'ResNet50' 'DenseNet169'  'ResNet101V2' 'ResNet50V2' 'VGG16' 'Xception'  'DenseNet169'  'DenseNet121' 'DenseNet201' 'EfficientNetB0' 'InceptionV3' 'MobileNet' 'MobileNetV2' 'NASNetMobile' 'ResNet101' 
 do
-    for b in  'NCS2' 'tf_cpu' 'tflite_edgetpu'
+    for b in   'tf_cpu' # 'NCS2' 'tflite_edgetpu'
     do
     echo $n $b
-    python3 pycoral_classification_raspi.py -b $b  -mn $n -ic 12000 -md  ~/Git/imagenet-on-the-edge/mnt_data/staay/raspi_classification_tflite_coral
+    python3 pycoral_classification_raspi.py -b $b  -mn $n -ic 12000 -md  ~/Git/imagenet-on-the-edge/mnt_data/staay/final_raspi
     done
 done
 
 for n in 'ResNet50' 'DenseNet169'  'ResNet101V2' 'ResNet50V2' 'VGG16' 'Xception'  'DenseNet169'  'DenseNet121' 'DenseNet201' 'EfficientNetB0' 'InceptionV3' 'MobileNet' 'MobileNetV2' 'NASNetMobile' 'ResNet101' 
 do
-    for b in  'NCS2' 'tf_cpu' 'tflite_edgetpu'
+    for b in 'tf_cpu' #'NCS2' 'tflite_edgetpu'
     do
     echo $n $b
-    python3 pycoral_classification_raspi.py -b $b  -mn $n -ic 12000 -md  ~/Git/imagenet-on-the-edge/mnt_data/staay/raspi_classification_tflite_coral
+    python3 pycoral_classification_raspi.py -b $b  -mn $n -ic 12000 -md  ~/Git/imagenet-on-the-edge/mnt_data/staay/final_raspi
     done
 done
 
 for n in 'ResNet50' 'DenseNet169'  'ResNet101V2' 'ResNet50V2' 'VGG16' 'Xception'  'DenseNet169'  'DenseNet121' 'DenseNet201' 'EfficientNetB0' 'InceptionV3' 'MobileNet' 'MobileNetV2' 'NASNetMobile' 'ResNet101' 
 do
-    for b in  'NCS2' 'tf_cpu' 'tflite_edgetpu'
+    for b in  'tf_cpu' #'NCS2' 'tflite_edgetpu'
     do
     echo $n $b
-    python3 pycoral_classification_raspi.py -b $b  -mn $n -ic 12000 -md  ~/Git/imagenet-on-the-edge/mnt_data/staay/raspi_classification_tflite_coral
+    python3 pycoral_classification_raspi.py -b $b  -mn $n -ic 12000 -md  ~/Git/imagenet-on-the-edge/mnt_data/staay/final_raspi
     done
 done
+
+python3 helper_scripts/raspi_merge.py -dir /mnt_data/staay/final_raspi

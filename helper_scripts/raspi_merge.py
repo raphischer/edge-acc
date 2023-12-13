@@ -1,8 +1,10 @@
 import os
 import pandas as pd
 import json
+import argparse
 
-path = 'mnt_data/staay/raspi_test'
+def merge_directory(target_dir)
+path = target_dir
 for (dirpath, dirnames, filenames) in os.walk(path):
     for dirname in dirnames:
         val_result_list = []
@@ -49,3 +51,13 @@ for (dirpath, dirnames, filenames) in os.walk(path):
 
         val_result_df_merged.to_json(path+'/'+dirname+'/'+'validation_results.json')
         #print(val_result_df.head)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-dir', '--directory', default = 'mnt/data/staay/raspi_test')
+    args = parser.parse_args()
+
+    merge_directory(args.directory)
+
+
