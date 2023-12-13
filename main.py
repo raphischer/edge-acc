@@ -1,8 +1,8 @@
 import argparse
 import os
 
-from mlprops.index_and_rate import rate_database, find_relevant_metrics, load_database
-from mlprops.util import load_meta
+from strep.index_and_rate import rate_database, find_relevant_metrics, load_database
+from strep.util import load_meta
 
 DATABASES = {
     'ImageNetEff': 'classification_database/database.pkl',

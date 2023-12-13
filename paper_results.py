@@ -8,11 +8,11 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy.stats import spearmanr
 
-from mlprops.util import read_json, lookup_meta, identify_all_correlations
-from mlprops.index_and_rate import prop_dict_to_val
-from mlprops.load_experiment_logs import find_sub_db
-from mlprops.elex.util import ENV_SYMBOLS, RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV
-from mlprops.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background
+from strep.util import read_json, lookup_meta, identify_all_correlations
+from strep.index_and_rate import prop_dict_to_val
+from strep.load_experiment_logs import find_sub_db
+from strep.elex.util import ENV_SYMBOLS, RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV
+from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background
 
 
 PLOT_WIDTH = 800
@@ -31,32 +31,53 @@ def create_all(databases):
     fig.write_image("dummy.pdf")
     time.sleep(0.5)
     os.remove("dummy.pdf")
-
-    # imagenet env trades
+    
     db_name, ds, task = 'ImageNetEff', 'imagenet', 'infer'
     db, meta, metrics, xdef, ydef, bounds, _, _ = databases[db_name]
     envs = sorted([env for env in pd.unique(db['environment']) if 'Laptop' not in env])
     models = sorted(pd.unique(db['model']).tolist())
-    traces = {}
+
+    power_draw_traces, acc_traces, compoound_traces = {}, {}, {}
     for env in envs:
         subdb = db[(db['environment'] == env) & (db['task'] == task)]
         avail_models = set(subdb['model'].tolist())
-        traces[env] = [subdb[subdb['model'] == mod]['compound_index'].iloc[0] if mod in avail_models else None for mod in models]
+        acc_traces[env] = [subdb[subdb['model'] == mod]['accuracy_k1'].iloc[0]['value'] if mod in avail_models else None for mod in models]
+        power_draw_traces[env] = [subdb[subdb['model'] == mod]['approx_USB_power_draw'].iloc[0]['value'] if mod in avail_models else None for mod in models]
+        compoound_traces[env] = [subdb[subdb['model'] == mod]['compound_index'].iloc[0] if mod in avail_models else None for mod in models]
     model_names = [f'{mod[:3]}..{mod[-5:]}' if len(mod) > 10 else mod for mod in models]
-    fig = go.Figure(
-        layout={'width': PLOT_WIDTH, 'height': PLOT_HEIGHT, 'margin': {'l': 0, 'r': 0, 'b': 0, 't': 0},
-                'yaxis':{'title': 'Compound score'}},
+
+    # environment profiling
+    for metric, trace in zip(['Compound score', 'Accuracy [%]', 'Power draw per inference [Ws]'], [compoound_traces, acc_traces, power_draw_traces]):
+        fig = go.Figure(
+            layout={'width': PLOT_WIDTH, 'height': PLOT_HEIGHT, 'margin': {'l': 0, 'r': 0, 'b': 0, 't': 0},
+                    'yaxis':{'title': metric}},
         data=[
-            go.Scatter(x=model_names, y=vals, name=env, mode='markers',
-            marker=dict(
-                color=RATING_COLORS[i],
-                symbol=ENV_SYMBOLS[i]
-            ),) for i, (env, vals) in enumerate(traces.items())
-        ]
-    )
-    fig.update_layout( legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5) )
-    fig.show()
-    fig.write_image(f'environment_changes.pdf')
+                go.Scatter(x=model_names, y=vals, name=env, mode='markers+lines',
+                marker=dict(
+                    color=RATING_COLORS[i],
+                    symbol=ENV_SYMBOLS[i]
+                ),) for i, (env, vals) in enumerate(trace.items())
+            ]
+        )
+        fig.update_yaxes(type="log")
+        fig.show()
+        fig.write_image(f'environment_{metric.split()[0].lower()}.pdf')
+
+    # # compound imagenet env trades
+    # fig = go.Figure(
+    #     layout={'width': PLOT_WIDTH, 'height': PLOT_HEIGHT, 'margin': {'l': 0, 'r': 0, 'b': 0, 't': 0},
+    #             'yaxis':{'title': 'Compound score'}},
+    #     data=[
+    #         go.Scatter(x=model_names, y=vals, name=env, mode='markers',
+    #         marker=dict(
+    #             color=RATING_COLORS[i],
+    #             symbol=ENV_SYMBOLS[i]
+    #         ),) for i, (env, vals) in enumerate(compoound_traces.items())
+    #     ]
+    # )
+    # fig.update_layout( legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5) )
+    # fig.show()
+    # fig.write_image(f'environment_changes.pdf')
 
     # scatter plots
     xaxis, yaxis = xdef[(ds, task)], ydef[(ds, task)]

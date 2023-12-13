@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats.stats import pearsonr
 
-from mlprops.monitoring import log_system_info
+from strep.monitoring import log_system_info
 
 
 def identify_all_correlations(db, all_metrics, scale='index'):
@@ -53,6 +53,8 @@ def load_meta(directory=None):
 
 
 def lookup_meta(meta, element_name, key='name', subdict=None):
+    if key == 'name' and '_index' in element_name:
+        return f'{element_name.replace("_index", "").capitalize()} Index'
     try:
         if subdict is not None and subdict in meta:
             found = meta[subdict][element_name]
