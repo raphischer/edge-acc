@@ -81,7 +81,7 @@ def edgetpu_inference(model_name,x,targetDir,modDir):
   final_predictions_10 = []
 
   workingDir = os.getcwd()
-  labelsFilePath =  workingDir +'/mnt_data/unpacked/imagenet2012_subset/1pct/5.0.0/label.labels.txt'
+  labelsFilePath =  'label.labels.txt'
   with open(labelsFilePath) as labelsFile:
       labelsArray = labelsFile.readlines()
   for i in range(0,imageCount):
