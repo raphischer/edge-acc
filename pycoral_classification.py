@@ -204,7 +204,11 @@ def loadData(dataDir, imageCount):
     for label, files in tqdm(selection.items(), 'loading data'):
       listOfLabels = listOfLabels + [[label]] * len(files)
       for fname in files:
-        listOfImages.append(np.load(os.path.join(dataDir, label, fname)))
+        try:
+          listOfImages.append(np.load(os.path.join(dataDir, label, fname)))
+        except FileNotFoundError:
+          fname_corr = fname.split('/')[0] + '\n/' + fname.split('/')[1]
+          listOfImages.append(np.load(os.path.join(dataDir, label, fname_corr)))
     images, labels = np.array(listOfImages), np.array(listOfLabels)
     if not os.path.isdir(npy_path):
        os.makedirs(npy_path)
