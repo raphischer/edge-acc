@@ -167,9 +167,13 @@ def tf_inference(model_name,x,targetDir):
 
 
 def loadData(dataDir, imageCount):
+  with open('prep_map.json', 'r') as jf:
+    # multiple models use the SAME preprocessing - we only store one of them on disc to save some disc space!
+    prep_map = json.load(jf)
+    prep_name = prep_map[os.path.basename(dataDir)]
   npy_path = 'classification_data'
-  npy_images = os.path.join(npy_path, f'images_{imageCount}_{os.path.basename(dataDir)}.npy')
-  npy_labels = os.path.join(npy_path, f'labels_{imageCount}_{os.path.basename(dataDir)}.npy')
+  npy_images = os.path.join(npy_path, f'images_{imageCount}_{prep_name}.npy')
+  npy_labels = os.path.join(npy_path, f'labels_{imageCount}_{prep_name}.npy')
   if os.path.isfile(npy_images):
     # directly load images from local dir
     images = np.load(npy_images)
