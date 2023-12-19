@@ -4,8 +4,8 @@
 source ./l_openvino_toolkit_ubuntu20_2022.3.1.9227.cf2c7da5689_x86_64/setupvars.sh
 
 # Nets running with all forms of acceleration
-for n in 'ResNet50' 'DenseNet169'  'ResNet101V2' 'ResNet50V2' 'Xception'  'DenseNet169'  'DenseNet121' 'DenseNet201' 'EfficientNetB0' 'InceptionV3' 'MobileNet' 'MobileNetV2' 'NASNetMobile' 'ResNet101' 
-do
+for n in 'ResNet50' 'DenseNet169'  'ResNet101V2' 'ResNet50V2' 'Xception' 'DenseNet121' 'DenseNet201' 'EfficientNetB0' 'InceptionV3' 'MobileNet' 'MobileNetV2' 'NASNetMobile' 'ResNet101' 
+do 
     for b in  'tf_cpu' 'NCS2' 'tflite_edgetpu'
     do
     echo $n $b
@@ -46,7 +46,7 @@ do
     done
 done    
 # 2nc Run (Flipped order)
-for n in 'ResNet101'  'NASNetMobile'  'MobileNetV2'  'MobileNet'  'InceptionV3'  'EfficientNetB0' 'DenseNet201' 'DenseNet121'  'DenseNet169'  'Xception'  'ResNet50V2' 'ResNet101V2'  'DenseNet169' 'ResNet50'
+for n in 'ResNet101'  'NASNetMobile'  'MobileNetV2'  'MobileNet'  'InceptionV3'  'EfficientNetB0' 'DenseNet201' 'DenseNet121' 'Xception'  'ResNet50V2' 'ResNet101V2'  'DenseNet169' 'ResNet50'
 do
     for b in  'tf_cpu' 'NCS2' 'tflite_edgetpu'
     do
