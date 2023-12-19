@@ -17,42 +17,18 @@
         "maximize": true,
         "independent_of_task": true
     },
-    "total_parameters": {
-        "name": "Number of Parameters",
-        "shortname": "Params",
-        "unit": "number",
-        "group": "Complexity",
-        "weight": 0.111111,
-        "independent_of_task": true
-    },
-    "number_of_operations": {
-        "name": "Number of Float Operations",
-        "shortname": "FLOPS",
-        "unit": "number",
-        "group": "Complexity",
-        "weight": 0.111111,
-        "independent_of_task": true
-    },
-    "fsize": {
-        "name": "Model Size on Disc",
-        "shortname": "Size",
-        "unit": "byte",
-        "group": "Complexity",
-        "weight": 0.111111,
-        "independent_of_task": true
-    },
     "approx_USB_power_draw": {
         "name": "Power Draw per Inference",
         "shortname": "I Power",
         "unit": "wattseconds",
         "group": "Resources",
-        "weight": 0.2
+        "weight": 0.5
     },
     "running_time": {
         "name": "Running Time per Inference",
         "shortname": "I Time",
         "unit": "seconds",
         "group": "Resources",
-        "weight": 0.1333333333
+        "weight": 0.5
     }
 }
