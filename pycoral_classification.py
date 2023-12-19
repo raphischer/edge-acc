@@ -159,6 +159,8 @@ def tf_inference(model_name,x,targetDir):
     emissions_tracker.stop()
   except:
     emissions_tracker.stop()
+    print(traceback.format_exc())
+    print('couldnt compute')
 
     pass
   final_predictions_1 = []
