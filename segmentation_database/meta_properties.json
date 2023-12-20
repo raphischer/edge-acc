@@ -1,58 +1,102 @@
 {
     "precision_M": {
         "name": "Mean Precision", 
-        "shortname": "precision",
+        "shortname": "M Prec",
         "unit": "percent",
         "group": "Performance",
-        "weight": 0.1666666,
-        "maximize": true,
-        "independent_of_task": true
+        "weight": 0.0625,
+        "maximize": true
     },
     "recall_M": {
-        "name": "Mean Recall (Sensitivity)", 
-        "shortname": "recall",
+        "name": "Mean Recall", 
+        "shortname": "M Rec",
         "unit": "percent",
         "group": "Performance",
-        "weight": 0.1666666,
-        "maximize": true,
-        "independent_of_task": true
+        "weight": 0.0625,
+        "maximize": true
     },
+    "precision_B": {
+        "name": "Best Recall", 
+        "shortname": "B Prec",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.0625,
+        "maximize": true
+    },
+    "recall_B": {
+        "name": "Best Recall", 
+        "shortname": "B Rec",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.0625,
+        "maximize": true
+    },
+    "mAP50_B": {
+        "name": "Best mAP at IoU 0.5", 
+        "shortname": "mAP50_B",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.0625,
+        "maximize": true
+    },
+    "mAP50_95_B": {
+        "name": "Best mAP at IoU 0.5 - 0.95", 
+        "shortname": "mAP50_95_B",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.0625,
+        "maximize": true
+    },
+    "mAP50_M": {
+        "name": "Mean mAP at IoU 0.5", 
+        "shortname": "mAP50_M",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.0625,
+        "maximize": true
+    },
+    "mAP50_95_M": {
+        "name": "Mean mAP at IoU 0.5 - 0.95", 
+        "shortname": "mAP50_95_M",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.0625,
+        "maximize": true
+    },
+    
     "total_parameters": {
         "name": "Number of Parameters",
         "shortname": "Params",
         "unit": "number",
         "group": "Complexity",
-        "weight": 0.111111,
-        "independent_of_task": true
+        "weight": 0.1
     },
     "number_of_operations": {
         "name": "Number of Float Operations",
         "shortname": "FLOPS",
         "unit": "number",
         "group": "Complexity",
-        "weight": 0.111111,
-        "independent_of_task": true
+        "weight": 0.1
     },
     "fsize": {
         "name": "Model Size on Disc",
         "shortname": "Size",
         "unit": "byte",
         "group": "Complexity",
-        "weight": 0.111111,
-        "independent_of_task": true
+        "weight": 0.1
     },
     "approx_USB_power_draw": {
         "name": "Power Draw per Inference",
         "shortname": "I Power",
         "unit": "wattseconds",
         "group": "Resources",
-        "weight": 0.2
+        "weight": 0.1
     },
     "running_time": {
         "name": "Running Time per Inference",
         "shortname": "I Time",
         "unit": "seconds",
         "group": "Resources",
-        "weight": 0.1333333333
+        "weight": 0.1
     }
 }
