@@ -10,3 +10,8 @@ Nets compared for Imagenet-Segmentation Task:
 - Step 2 (environment config) needs to be performed in each session!
 - udev Regeln angepasst werden und dein Nutzer muss der users Gruppe hinzugefigt werden. https://docs.openvino.ai/2022.3/openvino_docs_install_guides_configurations_for_ncs2.html#ncs-guide
 - pip install openvino
+
+
+## ValueError: Failed to load delegate from libedgetpu.so.1
+- de- and reconnect edgeTPU
+- try different USB cable!

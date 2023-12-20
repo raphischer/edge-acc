@@ -4,7 +4,16 @@
         "shortname": "Top1",
         "unit": "percent",
         "group": "Performance",
-        "weight": 0.1666666,
+        "weight": 0.25,
+        "maximize": true,
+        "independent_of_task": true
+    },
+    "accuracy_k3": {
+        "name": "Test Top3 Accuracy",
+        "shortname": "Top3",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.25,
         "maximize": true,
         "independent_of_task": true
     },
@@ -13,32 +22,17 @@
         "shortname": "Top5",
         "unit": "percent",
         "group": "Performance",
-        "weight": 0.1666666,
+        "weight": 0.25,
         "maximize": true,
         "independent_of_task": true
     },
-    "total_parameters": {
-        "name": "Number of Parameters",
-        "shortname": "Params",
-        "unit": "number",
-        "group": "Complexity",
-        "weight": 0.111111,
-        "independent_of_task": true
-    },
-    "number_of_operations": {
-        "name": "Number of Float Operations",
-        "shortname": "FLOPS",
-        "unit": "number",
-        "group": "Complexity",
-        "weight": 0.111111,
-        "independent_of_task": true
-    },
-    "fsize": {
-        "name": "Model Size on Disc",
-        "shortname": "Size",
-        "unit": "byte",
-        "group": "Complexity",
-        "weight": 0.111111,
+    "accuracy_k10": {
+        "name": "Test Top10 Accuracy",
+        "shortname": "Top10",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.25,
+        "maximize": true,
         "independent_of_task": true
     },
     "approx_USB_power_draw": {
@@ -46,13 +40,13 @@
         "shortname": "I Power",
         "unit": "wattseconds",
         "group": "Resources",
-        "weight": 0.2
+        "weight": 0.5
     },
     "running_time": {
         "name": "Running Time per Inference",
         "shortname": "I Time",
         "unit": "seconds",
         "group": "Resources",
-        "weight": 0.1333333333
+        "weight": 0.5
     }
 }

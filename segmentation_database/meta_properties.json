@@ -90,13 +90,13 @@
         "shortname": "I Power",
         "unit": "wattseconds",
         "group": "Resources",
-        "weight": 0.1
+        "weight": 0.5
     },
     "running_time": {
         "name": "Running Time per Inference",
         "shortname": "I Time",
         "unit": "seconds",
         "group": "Resources",
-        "weight": 0.1
+        "weight": 0.5
     }
 }

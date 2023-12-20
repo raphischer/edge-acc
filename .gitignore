@@ -170,4 +170,4 @@ l_openvino_toolkit_debian9_2022.3.1.9227.cf2c7da5689_arm64/*
 openvino_env/*
 GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
 eval1/
-
+classification_data/*
