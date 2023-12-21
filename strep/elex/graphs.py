@@ -34,7 +34,15 @@ def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, bound
 
 def add_rating_background(fig, rating_pos, mode, dark_mode):
     for xi, (x0, x1) in enumerate(rating_pos[0]):
+        if xi == 0:
+            x0 = fig.layout.xaxis.range[1]
+        if xi == len(rating_pos[0]) - 1:
+            x1 = fig.layout.xaxis.range[0]
         for yi, (y0, y1) in enumerate(rating_pos[1]):
+            if yi == 0:
+                y0 = fig.layout.yaxis.range[1]
+            if yi == len(rating_pos[1]) - 1:
+                y1 = fig.layout.yaxis.range[0]
             color = RATING_COLORS[int(calculate_single_compound_rating([xi, yi], mode))]
             if dark_mode:
                 fig.add_shape(type="rect", layer='below', line=dict(color='#0c122b'), fillcolor=color, x0=x0, x1=x1, y0=y0, y1=y1, opacity=.8)
@@ -113,5 +121,5 @@ def create_bar_graph(plot_data, dark_mode, discard_y_axis):
 
 
 def create_star_plot(summary, metrics):
-    print(1)
+    print('TODO')
     

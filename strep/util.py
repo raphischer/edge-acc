@@ -133,6 +133,8 @@ def create_output_dir(dir=None, prefix='', config=None):
 
 
 def prop_dict_to_val(df, key='value'):
+    if hasattr(df, "map"): # for newer pandas versions
+        return df.map(lambda val: val[key] if isinstance(val, dict) and key in val else val)
     return df.applymap(lambda val: val[key] if isinstance(val, dict) and key in val else val)
 
 

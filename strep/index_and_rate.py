@@ -28,8 +28,14 @@ def score_performances(database, mode='optimistic mean', quantiles=None):
     }
     for i, (_, log) in enumerate(database.iterrows()):
         results['compound_index'].append( calculate_single_compound_rating(log, mode) )
-        results['quality_index'].append( calculate_single_compound_rating(filter_properties(log, 'Performance'), mode) )
-        results['resource_index'].append( calculate_single_compound_rating(filter_properties(log, 'Performance', True), mode) )
+        try:
+            results['quality_index'].append( calculate_single_compound_rating(filter_properties(log, 'Performance'), mode) )
+        except RuntimeError:
+            results['quality_index'].append(0)
+        try:
+            results['resource_index'].append( calculate_single_compound_rating(filter_properties(log, 'Performance', True), mode) )
+        except RuntimeError:
+            results['resource_index'].append(0)
 
     ratings = {}
     for key, values in results.items():
@@ -266,12 +272,11 @@ def identify_property_meta(given_meta, database):
 def rate_database(database, given_meta, boundaries=None, indexmode='best', references=None, unit_fmt=None, rating_mode='optimistic mean'):
     assert pd.unique(database.index).size == database.shape[0], f"ERROR! Database shaped {database.shape} has only {pd.unique(database.index).size} unique indices"
     unit_fmt = unit_fmt or CustomUnitReformater()
+    database = prop_dict_to_val(database) # necessary if already was processed
     properties_meta = identify_property_meta(given_meta, database)
 
     # group each dataset, task and environment combo
-    fixed_fields = ['dataset', 'task']
-    if pd.unique(database['environment']).size > 1:
-        fixed_fields.append('environment')
+    fixed_fields = ['dataset', 'task', 'environment']
 
     # assess index values
     print('    assessing index values')
@@ -282,8 +287,8 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
         for prop, meta in properties_meta.items():
             if prop in data.columns:
                 higher_better = 'maximize' in meta and meta['maximize']
-                
-                if indexmode == 'centered': # one central reference model receives index 1, everything else in relation
+                # one central reference model receives index 1, everything else in relation
+                if indexmode == 'centered':
                     if references is None:
                         references = {}
                     reference_name = references[ds] if ds in references else find_optimal_reference(data, properties_meta)
@@ -291,13 +296,9 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
                     reference = data[data['model'] == reference_name]
                     assert reference.shape[0] == 1, f'Found multiple results for reference {reference_name} in {group_field_vals} results!'
                     ref_val = reference[prop].values[0]
-                    # if database was already processed before, take the value from the dict
-                    if isinstance(ref_val, dict):
-                        ref_val = ref_val['value']
-
-                elif indexmode == 'best': # the best perfoming model receives index 1, everything else in relation
-                    # extract from dict when already processed before
-                    all_values = [val['value'] if isinstance(val, dict) else val for val in data[prop].dropna()]
+                # the best perfoming model receives index 1, everything else in relation
+                elif indexmode == 'best':
+                    all_values = data[prop].dropna().values
                     if len(all_values) == 0:
                         ref_val = data[prop].iloc[0]
                     else:
@@ -305,7 +306,12 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
                 else:
                     raise RuntimeError(f'Invalid indexmode {indexmode}!')
                 # extract meta, project on index values and rate
-                database.loc[data.index,prop] = data.loc[:,prop].map( lambda value: process_property(value, ref_val, meta, unit_fmt) )
+                database.loc[data.index,prop + '_dict'] = data.loc[:,prop].map( lambda value: process_property(value, ref_val, meta, unit_fmt) )
+    # override the float values with dicts
+    for prop in properties_meta.keys():
+        if prop + '_dict' in database.columns:
+            database.loc[:,prop] = database.loc[:,prop + '_dict']
+            database = database.drop(labels=prop + '_dict', axis=1)
 
     print('    assessing ratings')
     # assess ratings & boundaries
@@ -350,10 +356,9 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
                             database.loc[data.index,prop] = [valid.values[0]] * data.shape[0]
     
     print('    calculating compound ratings')
-    # calculate compound ratings for each DS X TASK X ENVIRONMENT combo, dropping tha nan columns
-    grouped_by = database.groupby(fixed_fields)
-    for group_field_vals, data in grouped_by:
-        data = drop_na_properties(data)
+    # calculate compound index and ratings for each DS X TASK X ENVIRONMENT combo
+    for group_field_vals, data in database.groupby(['dataset', 'task', 'environment']):
+        # drop nan columns
         scoring = score_performances(drop_na_properties(data), rating_mode)
         for key, values in scoring.items():
             database.loc[data.index,key] = values

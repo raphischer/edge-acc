@@ -41,7 +41,7 @@ if __name__ == '__main__':
         databases[name] = ( rated_database, meta, metrics, xaxis_default, yaxis_default, boundaries, real_boundaries, references )
 
     if args.mode == 'interactive':
-       from mlprops.elex.app import Visualization
+       from strep.elex.app import Visualization
        app = Visualization(databases)
        app.run_server(debug=args.debug, host=args.host, port=args.port)
 
