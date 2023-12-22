@@ -124,59 +124,6 @@ def create_all(databases):
     with open('model_comp.tex', 'w') as outf:
         outf.write(TEX_TABLE_GENERAL.replace('$DATA', '\n        '.join(rows)))
 
-    for idx, ((ds), data) in enumerate(meta_learned_db.groupby(['dataset'])):
-        if data['dataset_orig'].iloc[0] == ds:
-            row = [ get_ds_short(meta['dataset'][ds]['name']) ]
-            # best XPCR
-            sort_xpcr = data.sort_values('compound_index_pred', ascending=False)
-            sel_xpcr = sort_xpcr.iloc[0]
-            values = [ (sel_xpcr['compound_index_true'], sel_xpcr[COL_SEL]['value'], sel_xpcr['train_power_draw']['value'] / 3.6e3) ]
-            # best error
-            sort_error = data.sort_values(f'{COL_SEL}_pred', ascending=False)
-            sel_error = sort_error.iloc[0]
-            values.append( (sel_error['compound_index_true'], sel_error[COL_SEL]['value'], sel_error['train_power_draw']['value'] / 3.6e3) )
-            # random
-            # sel_rand = sort_xpcr.iloc[np.random.randint(1, sort_xpcr.shape[0])]
-            # values.append( (sel_rand['compound_index_true'], sel_rand[COL_SEL]['value'], sel_rand['train_power_draw']['value'] / 3.6e3) )
-            # testing all
-            sort_exha = data.sort_values('compound_index_true', ascending=False)
-            sel_exha = sort_exha.iloc[0]
-            values.append( (sel_exha['compound_index_true'], sel_exha[COL_SEL]['value'], np.sum([val['value'] / 3.6e3 for val in data['train_power_draw']]) ) )
-            # autokeras
-            auto = autokeras[autokeras['dataset'] == ds]
-            auto = auto.sort_values('task')
-            values.append( (auto[COL_SEL].values[0], auto['train_power_draw'].values[1] / 3.6e3) )
-            # bold print best error
-            best_idx = np.max([val[0] for val in values[:3]])
-            best_err = np.min([val[1] for val in values[:3]] + [val[0] for val in values[3:]])
-            best_ene = np.min([val[2] for val in values[:3]] + [val[1] for val in values[3:]])
-            for results in values:
-                format_results = [ format_val(res) for res in results ]
-                if len(results) == 3:
-                    format_results[0] = f'{results[0]:3.2f}'
-                    for val_idx, best in enumerate([best_idx, best_err, best_ene]):
-                        if best == results[val_idx]:
-                            format_results[val_idx] = r'\textbf{' + format_results[val_idx] + r'}'
-                else:
-                    for val_idx, best in enumerate([best_err, best_ene]):
-                        if best == results[val_idx]:
-                            format_results[val_idx] = r'\textbf{' + format_results[val_idx] + r'}'
-                row += format_results
-                    # if err == best_err and idx < len(values) - 1:
-                    #     row.append(r'\textbf{' + f'{err:6.3f}'[:5] + r'}')
-                    # else:
-                    #     row.append(f'{err:6.3f}'[:6])
-                    # if ene == best_ene and idx < len(values) - 1:
-                    #     row.append(r'\textbf{' + f'{ene:6.3f}'[:5] + r'}')
-                    # else:
-                    #     row.append(f'{ene:6.3f}'[:6])
-            rows.append(' & '.join(row) + r' \\')
-    final_text = TEX_TABLE_GENERAL.replace('$DATA', '\n        '.join(rows))
-    final_text = final_text.replace('$ALIGN', r'{l|ccc|ccc||ccc||cc}')
-    with open('method_comparison.tex', 'w') as outf:
-        outf.write(final_text)
-
-
     ################# FIGURES
 
     ####### DUMMY OUTPUT ####### for setting up pdf export of plotly
