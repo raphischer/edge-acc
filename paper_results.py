@@ -71,7 +71,7 @@ def create_all(databases):
 
     #############   COMPARISON TABLE
 
-        TEX_TABLE_GENERAL = r'''\begin{tabular}{c|cc|cc|cc}
+    TEX_TABLE_GENERAL = r'''\begin{tabular}{c|cc|cc|cc}
         Model & \multicolumn{2}{c}{Desktop Power Draw [Ws]} & \multicolumn{2}{c}{Laptop Power Draw [Ws]} & \multicolumn{2}{c}{RasPi Power Draw [Ws]} \\
          & Host & Acc (Type) (Rel) & Host & Acc (Type) (Rel) & Host & Acc (Type) (Rel) \\
          \midrule
