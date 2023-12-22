@@ -47,12 +47,9 @@ def extract_results(subdb, field, scale, all_models):
 def create_all(databases):
     os.chdir('paper_results')
 
-    ####### DUMMY OUTPUT ####### for setting up pdf export of plotly
-    fig=px.scatter(x=[0, 1, 2], y=[0, 1, 4])
-    fig.write_image("dummy.pdf")
-    time.sleep(0.5)
-    os.remove("dummy.pdf")
-    
+
+    ############## SETUP
+
     envs = sorted(pd.unique(databases['ImageNetEff'][0]['environment']).tolist())
     env_cols, env_symb = {}, {}
     for env in envs:
@@ -71,6 +68,122 @@ def create_all(databases):
     models_seg = sorted([mod for mod in pd.unique(db['model']) if db[db['model'] == mod].shape[0] > 3])
     models = models_cls + [None] + models_seg
     model_names = [f'{mod[:3]}..{mod[-5:]}' if mod is not None and len(mod) > 10 else mod for mod in models]
+
+    #############   COMPARISON TABLE
+
+        TEX_TABLE_GENERAL = r'''\begin{tabular}{c|cc|cc|cc}
+        Model & \multicolumn{2}{c}{Desktop Power Draw [Ws]} & \multicolumn{2}{c}{Laptop Power Draw [Ws]} & \multicolumn{2}{c}{RasPi Power Draw [Ws]} \\
+         & Host & Acc (Type) (Rel) & Host & Acc (Type) (Rel) & Host & Acc (Type) (Rel) \\
+         \midrule
+        $DATA
+    \end{tabular}'''
+    rows = []
+    db = databases['ImageNetEff'][0]
+    for model, short in zip(models, model_names):
+        if model is None:
+            db = databases['CocoEff'][0]
+        else:
+            row = [short]
+            for host in HOSTS:
+                subdb = db[(db['model'] == model) & (db['architecture'] == host)]
+                try:
+                    host = subdb[subdb['backend'] == 'CPU']['approx_USB_power_draw'].iloc[0]['value']
+                except IndexError:
+                    host = None
+                try:
+                    best = subdb[subdb['backend'] == 'NCS']['approx_USB_power_draw'].iloc[0]['value']
+                except IndexError:
+                    best = 0
+                try:
+                    TPU = subdb[subdb['backend'] == 'TPU']['approx_USB_power_draw'].iloc[0]['value']
+                except IndexError:
+                    TPU = 0
+                best = TPU if best == 0 else min(best, TPU)
+                acc = r'\colorbox{RA}{NCS}' if best != TPU else r'\colorbox{RC}{TPU}'
+                to_add = ['---', '---']
+                if host is not None:
+                    to_add[0] = f'{host:4.2f}'
+                    if best > 0:
+                        rel = best / host * 100
+                        if rel < 15:
+                            rel = r'\colorbox{RA}{' + f'{rel:2.0f}' + r'\%}'
+                        elif rel < 60:
+                            rel = r'\colorbox{RC}{' + f'{rel:2.0f}' + r'\%}'
+                        else: 
+                            rel = r'\colorbox{RE}{' + f'{rel:2.0f}' + r'\%}'
+                        to_add[1] = f'{best:4.2f} ({acc}) ({rel})'
+                row = row + to_add
+            rows.append(row)
+    # bold print best
+    for col_idx in [1, 2, 3, 4, 5, 6]:
+        res = [row[col_idx].split()[0] if row[col_idx] != '---' else 10000 for row in rows ]
+        amin = np.argmin(res)
+        best_val = rows[amin][col_idx]
+        rows[amin][col_idx] = r'\textbf{' + best_val.split()[0] + '} ' + best_val.split(maxsplit=1)[1] if len(best_val.split()) > 1 else r'\textbf{' + best_val + '} '
+    rows = [' & '.join(row) + r' \\' for row in rows]
+    with open('model_comp.tex', 'w') as outf:
+        outf.write(TEX_TABLE_GENERAL.replace('$DATA', '\n        '.join(rows)))
+
+    for idx, ((ds), data) in enumerate(meta_learned_db.groupby(['dataset'])):
+        if data['dataset_orig'].iloc[0] == ds:
+            row = [ get_ds_short(meta['dataset'][ds]['name']) ]
+            # best XPCR
+            sort_xpcr = data.sort_values('compound_index_pred', ascending=False)
+            sel_xpcr = sort_xpcr.iloc[0]
+            values = [ (sel_xpcr['compound_index_true'], sel_xpcr[COL_SEL]['value'], sel_xpcr['train_power_draw']['value'] / 3.6e3) ]
+            # best error
+            sort_error = data.sort_values(f'{COL_SEL}_pred', ascending=False)
+            sel_error = sort_error.iloc[0]
+            values.append( (sel_error['compound_index_true'], sel_error[COL_SEL]['value'], sel_error['train_power_draw']['value'] / 3.6e3) )
+            # random
+            # sel_rand = sort_xpcr.iloc[np.random.randint(1, sort_xpcr.shape[0])]
+            # values.append( (sel_rand['compound_index_true'], sel_rand[COL_SEL]['value'], sel_rand['train_power_draw']['value'] / 3.6e3) )
+            # testing all
+            sort_exha = data.sort_values('compound_index_true', ascending=False)
+            sel_exha = sort_exha.iloc[0]
+            values.append( (sel_exha['compound_index_true'], sel_exha[COL_SEL]['value'], np.sum([val['value'] / 3.6e3 for val in data['train_power_draw']]) ) )
+            # autokeras
+            auto = autokeras[autokeras['dataset'] == ds]
+            auto = auto.sort_values('task')
+            values.append( (auto[COL_SEL].values[0], auto['train_power_draw'].values[1] / 3.6e3) )
+            # bold print best error
+            best_idx = np.max([val[0] for val in values[:3]])
+            best_err = np.min([val[1] for val in values[:3]] + [val[0] for val in values[3:]])
+            best_ene = np.min([val[2] for val in values[:3]] + [val[1] for val in values[3:]])
+            for results in values:
+                format_results = [ format_val(res) for res in results ]
+                if len(results) == 3:
+                    format_results[0] = f'{results[0]:3.2f}'
+                    for val_idx, best in enumerate([best_idx, best_err, best_ene]):
+                        if best == results[val_idx]:
+                            format_results[val_idx] = r'\textbf{' + format_results[val_idx] + r'}'
+                else:
+                    for val_idx, best in enumerate([best_err, best_ene]):
+                        if best == results[val_idx]:
+                            format_results[val_idx] = r'\textbf{' + format_results[val_idx] + r'}'
+                row += format_results
+                    # if err == best_err and idx < len(values) - 1:
+                    #     row.append(r'\textbf{' + f'{err:6.3f}'[:5] + r'}')
+                    # else:
+                    #     row.append(f'{err:6.3f}'[:6])
+                    # if ene == best_ene and idx < len(values) - 1:
+                    #     row.append(r'\textbf{' + f'{ene:6.3f}'[:5] + r'}')
+                    # else:
+                    #     row.append(f'{ene:6.3f}'[:6])
+            rows.append(' & '.join(row) + r' \\')
+    final_text = TEX_TABLE_GENERAL.replace('$DATA', '\n        '.join(rows))
+    final_text = final_text.replace('$ALIGN', r'{l|ccc|ccc||ccc||cc}')
+    with open('method_comparison.tex', 'w') as outf:
+        outf.write(final_text)
+
+
+    ################# FIGURES
+
+    ####### DUMMY OUTPUT ####### for setting up pdf export of plotly
+    fig=px.scatter(x=[0, 1, 2], y=[0, 1, 4])
+    fig.write_image("dummy.pdf")
+    time.sleep(0.5)
+    os.remove("dummy.pdf")
 
 
     fig = make_subplots(rows=2, cols=2, shared_yaxes=True, vertical_spacing=0.15, horizontal_spacing=0.04)
