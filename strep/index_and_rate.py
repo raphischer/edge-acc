@@ -116,7 +116,7 @@ def index_to_rating(index, scale):
     return 4 # worst rating if index does not fall in boundaries
 
 
-def process_property(value, reference_value, meta, unit_fmt):
+def process_property(value, reference_value, meta, unit_fmt, index_mode):
     if isinstance(value, dict): # re-indexing
         returned_dict = value
     else:
@@ -133,7 +133,7 @@ def process_property(value, reference_value, meta, unit_fmt):
         if not higher_better and reference_value < 0: # shift both value to positive range for calculating the correct index
             val, reference_value = reference_value * -1 + 1 + val, 1
         returned_dict['index'] = value_to_index(val, reference_value, higher_better)
-        if returned_dict['index'] < 0 or returned_dict['index'] > 1:
+        if index_mode == 'best' and (returned_dict['index'] < 0 or returned_dict['index'] > 1):
             print(f'Invalid index occured! {returned_dict["index"]} for value {val}, reference {reference_value}')
     return returned_dict
 
@@ -294,7 +294,7 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
                     reference_name = references[ds] if ds in references else find_optimal_reference(data, properties_meta)
                     references[ds] = reference_name # if using optimal, store this info for later use
                     reference = data[data['model'] == reference_name]
-                    assert reference.shape[0] == 1, f'Found multiple results for reference {reference_name} in {group_field_vals} results!'
+                    assert reference.shape[0] == 1, f'Found none or multiple results for reference {reference_name} in {group_field_vals} results!'
                     ref_val = reference[prop].values[0]
                 # the best perfoming model receives index 1, everything else in relation
                 elif indexmode == 'best':
@@ -306,7 +306,7 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
                 else:
                     raise RuntimeError(f'Invalid indexmode {indexmode}!')
                 # extract meta, project on index values and rate
-                database.loc[data.index,prop + '_dict'] = data.loc[:,prop].map( lambda value: process_property(value, ref_val, meta, unit_fmt) )
+                database.loc[data.index,prop + '_dict'] = data.loc[:,prop].map( lambda value: process_property(value, ref_val, meta, unit_fmt, indexmode) )
     # override the float values with dicts
     for prop in properties_meta.keys():
         if prop + '_dict' in database.columns:
@@ -330,7 +330,7 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
                 # calculate rating and real boundary values
                 data[prop].map( lambda pr: pr.update({'rating': index_to_rating(pr['index'], pr_bounds)}) if isinstance(pr, dict) else pr )
                 if indexmode == 'centered':
-                    raise NotImplementedError() # but should be the value with index val 1
+                    ref_val = [entry['value'] for entry in data[prop] if entry['index']==1][0] # but should be the value with index val 1
                 else: # indexmode == 'best'
                     ref_val = sorted([(entry['index'], entry['value']) for entry in data[prop]])[-1][1]
                 real_boundaries[group_field_vals][prop] = [(index_to_value(start, ref_val, higher_better), index_to_value(stop, ref_val, higher_better)) for (start, stop) in pr_bounds]

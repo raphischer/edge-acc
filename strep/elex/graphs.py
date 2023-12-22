@@ -71,7 +71,7 @@ def create_scatter_graph(plot_data, axis_title, dark_mode, ax_border=0.1, marker
             text = text + model_text # place text near most middle node
             x.append(None)
             y.append(None)
-        fig.add_trace(go.Scatter(x=x, y=y, text=text, mode='lines+text', line={'color': 'black'}, showlegend=False))
+        fig.add_trace(go.Scatter(x=x, y=y, text=text, mode='lines+markers+text', line={'color': 'black'}, showlegend=False))
     for env_i, (env_name, data) in enumerate(plot_data.items()):
         # scale to vals between 0 and 1?
         index_vals = (np.array(data['index']) - i_min) / (i_max - i_min) if norm_colors else data['index']
