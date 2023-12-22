@@ -304,6 +304,16 @@ def create_all(databases):
     xaxis, yaxis, marker_width, ax_border = 'resource_index', 'quality_index', 6, 0.1
     for p_idx, (host, host_envs) in enumerate(host_envs_map.items()):
         plot_data, _, _ = assemble_scatter_data(host_envs, db, 'index', xaxis, yaxis, meta, bounds)
+        model_list = ['MobileNetV2','DenseNet169','MobileNet', 'EfficientNetB3','InceptionV3','ResNet50','ResNet50V2','MobileNetV3Small','VGG19','Xception','NASNetLarge']
+        for data in plot_data.values():
+            model_idx =  [i for i in range(len(data['names'])) if data['names'][i] in model_list]
+            data['ratings'] = [data['ratings'][index] for index in model_idx]
+            data['x'] = [data['x'][index] for index in model_idx]
+            data['y'] = [data['y'][index] for index in model_idx]
+            data['index'] = [data['index'][index] for index in model_idx]
+            data['names'] = [data['names'][index] for index in model_idx]
+
+
         i_min, i_max = min([min(vals['index']) for vals in plot_data.values()]), max([max(vals['index']) for vals in plot_data.values()])
         # link model scatter points across multiple environment
         models = set.union(*[set(data['names']) for data in plot_data.values()])
