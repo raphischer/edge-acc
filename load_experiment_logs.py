@@ -152,7 +152,7 @@ def find_sub_database(database, dataset=None, task=None, environment=None):
     return database
 
 
-database = load_database(os.path.join(os.getcwd(),'mnt_data/staay/workstation_final'))
+database = load_database(os.path.join(os.getcwd(),'mnt_data/staay/yolov8l-segmentation'))
 print(database.shape)
 print(database.columns)
-database.to_pickle('result_databases/workstation_classification_final_18_12_2023.pkl')
+database.to_pickle('result_databases/yolov8l-segmentation.pkl')
