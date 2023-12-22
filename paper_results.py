@@ -157,7 +157,7 @@ def create_all(databases):
                         except IndexError:
                             pass
                     occ, _ = np.histogram(results, bins=n_bins, range=b_range)
-                    name = f'{task} on {host}'
+                    name = r'$\text{'+f'{task} on {host}'+'}$'
                     fig.add_trace(go.Bar(x=bins, y=occ, name=name, marker_color=col, marker_pattern_shape=PATTERNS[d_idx+1], legendgroup=name, showlegend=idx+s_idx==0), row=s_idx+1, col=idx+1)
                     fig.update_xaxes(title_text=label.replace('{A}', usbacc), row=s_idx+1, col=idx+1)
     fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.5, margin={'l': 0, 'r': 0, 'b': 0, 't': 50},
@@ -216,10 +216,10 @@ def create_all(databases):
     fig.write_image(f'env_mod_time_acc_power.pdf')
 
     # model / environment redundancy - run time VS power_draw & acc1 vs acc5
-    time_acc_power['Top5 / mAP50-95 UUUT [%]'] = others['acc2']
-    time_acc_power['Top1 / mAP50 SUUT [%]'] = others['acc_rel']
-    plot1 = ['Running time UUUT [s]', 'Power draw UUUT [Ws]', [-0.02, 0.8], [-1, 24]]
-    plot2 = ['Top1 / mAP50 UUUT [%]', 'Top5 / mAP50-95 UUUT [%]', [0.56, 0.79], [0.75, 0.95]]
+    time_acc_power[r'$\text{Top5 / mAP50-95 UUUT [\%]}$'] = others['acc2']
+    time_acc_power[r'$\text{Top1 / mAP50 SUUT [\%]}$'] = others['acc_rel']
+    plot1 = [r'$\text{Running time UUUT [s]}$', r'$\text{Power draw UUUT [Ws]}$', [-0.02, 0.8], [-1, 24]]
+    plot2 = [r'$\text{Top1 / mAP50 UUUT [\%]}$', r'$\text{Top5 / mAP50-95 UUUT [\%]}$', [0.56, 0.79], [0.75, 0.95]]
     fig = make_subplots(rows=1, cols=2, horizontal_spacing=0.02)
     for idx, (xaxis, yaxis, xrange, yrange) in enumerate([plot1 , plot2]):
         for env in envs:
@@ -239,8 +239,8 @@ def create_all(databases):
     fig.write_image(f'env_trades.pdf')
 
     # model / environment benefit of SUUT
-    plot1 = ['Power draw UUUT [Ws]', 'Top1 / mAP50 UUUT [%]', [-1, 20], [0.48, 0.8]]
-    plot2 = ['Power draw SUUT [%]', 'Top1 / mAP50 SUUT [%]', [-0.02, 0.43], [0.75, 1.02]]
+    plot1 = [r'$\text{Power draw UUUT [Ws]}$', r'$\text{Top1 / mAP50 UUUT [\%]}$', [-1, 20], [0.48, 0.8]]
+    plot2 = [r'$\text{Power draw SUUT [\%]}$', r'$\text{Top1 / mAP50 SUUT [\%]}$', [-0.02, 0.43], [0.75, 1.02]]
     fig = make_subplots(rows=1, cols=2, horizontal_spacing=0.02)
     for idx, (xaxis, yaxis, xrange, yrange) in enumerate([plot1 , plot2]):
         for env in envs:
@@ -293,7 +293,7 @@ def create_all(databases):
                     theta=metr_names, fill='toself', name=r'$\text{{E}} : \bar M = {R}$'.replace('{E}', env.split()[1]).replace('{R}', f'{row["compound_index"].values[0]:4.2f}')
                 ))
         fig.update_layout(
-            polar=dict(radialaxis=dict(visible=True)), width=PLOT_WIDTH*0.33, height=PLOT_HEIGHT, title_y=1.0, title_x=0.5, title_text=f'{model} on {host}',
+            polar=dict(radialaxis=dict(visible=True)), width=PLOT_WIDTH*0.33, height=PLOT_HEIGHT, title_y=1.0, title_x=0.5, title_text = r'$\text{' +f'{model} on {host}' + '}$',
             legend=dict( yanchor="bottom", y=1.02, xanchor="center", x=0.5), margin={'l': 30, 'r': 30, 'b': 5, 't': 80}
         )
         fig.show()
