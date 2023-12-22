@@ -35,6 +35,7 @@
         "maximize": true,
         "independent_of_task": true
     },
+    
     "approx_USB_power_draw": {
         "name": "Power Draw per Inference",
         "shortname": "I Power",
