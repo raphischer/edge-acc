@@ -11,7 +11,7 @@ from plotly.express.colors import sample_colorscale
 from strep.util import read_json, lookup_meta, identify_all_correlations
 from strep.index_and_rate import prop_dict_to_val
 from strep.load_experiment_logs import find_sub_db
-from strep.elex.util import ENV_SYMBOLS, RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV
+from strep.elex.util import ENV_SYMBOLS, RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV, PATTERNS
 from strep.elex.graphs import assemble_scatter_data, add_rating_background
 
 
@@ -72,6 +72,42 @@ def create_all(databases):
     models = models_cls + [None] + models_seg
     model_names = [f'{mod[:3]}..{mod[-5:]}' if mod is not None and len(mod) > 10 else mod for mod in models]
 
+
+    fig = make_subplots(rows=2, cols=2, shared_yaxes=True, vertical_spacing=0.15, horizontal_spacing=0.04)
+    # unify axes bins
+    b_range1, b_range2, n_bins = (-0.3, 0.3), (-0.1, 0.05), 10
+    _, bins = np.histogram([], bins=n_bins, range=b_range1)
+    bins1 = [ (bins[b_idx] + bins[b_idx+1]) / 2 for b_idx in range(bins.size - 1) ]
+    _, bins = np.histogram([], bins=n_bins, range=b_range2)
+    bins2 = [ (bins[b_idx] + bins[b_idx+1]) / 2 for b_idx in range(bins.size - 1) ]
+    field1, field2, lab1, lab2 = 'resource_index', 'quality_index', r'$\text{Resource average diff via {A}}: \delta \bar Q$', r'$\text{Quality average diff via {A}}: \delta \bar Q$'
+    for idx, usbacc in enumerate(['NCS', 'TPU']):
+        for d_idx, (db, task) in enumerate(zip(databases.values(), ['Classification', 'Segmentation'])):
+            db = db[0]
+            for host, col in zip(HOSTS, [RATING_COLORS[4], RATING_COLORS[2], RATING_COLORS[0]]):
+                base = subdb = db[db['environment'] == f'{host} CPU']
+                subdb = db[db['environment'] == f'{host} {usbacc}']
+                for s_idx, (field, bins, b_range, label) in enumerate(zip([field1, field2], [bins1, bins2], [b_range1, b_range2], [lab1, lab2])):
+                    results = []
+                    for mod in subdb['model']:
+                        try:
+                            base_val = base[base['model'] == mod][field].iloc[0]
+                            acc_val = subdb[subdb['model'] == mod][field].iloc[0]
+                            results.append(acc_val - base_val)
+                        except IndexError:
+                            pass
+                    occ, _ = np.histogram(results, bins=n_bins, range=b_range)
+                    name = f'{task} on {host}'
+                    fig.add_trace(go.Bar(x=bins, y=occ, name=name, marker_color=col, marker_pattern_shape=PATTERNS[d_idx+1], legendgroup=name, showlegend=idx+s_idx==0), row=s_idx+1, col=idx+1)
+                    fig.update_xaxes(title_text=label.replace('{A}', usbacc), row=s_idx+1, col=idx+1)
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.5, margin={'l': 0, 'r': 0, 'b': 0, 't': 50},
+                      barmode='stack', xaxis={'categoryorder':'category ascending'},
+                      legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5,
+                                  entrywidth=0.3, entrywidthmode='fraction'))
+    fig.show()
+    fig.write_image(f'improvement_bars.pdf')
+
+
     acc_metrics = {'ImageNetEff': 'accuracy_k1', 'CocoEff': 'mAP50_M'}
     acc_metrics2 = {'ImageNetEff': 'accuracy_k5', 'CocoEff': 'mAP50_95_M'}
     time_acc_power = {
@@ -113,8 +149,9 @@ def create_all(databases):
         fig.update_yaxes(title_text=metric, row=idx+1, col=1)
         if 'Ws' in metric:
             fig.update_yaxes(type="log", row=idx+1, col=1)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT * 3, margin={'l': 0, 'r': 0, 'b': 0, 't': 50},
-                      legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5))
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*3, margin={'l': 0, 'r': 0, 'b': 0, 't': 50},
+                      legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5,
+                                  entrywidth=0.3, entrywidthmode='fraction'))
     fig.show()
     fig.write_image(f'env_mod_time_acc_power.pdf')
 
@@ -135,8 +172,9 @@ def create_all(databases):
             fig.update_yaxes(title_text=yaxis, range=yrange, row=1, col=idx+1)
             if idx == 1:
                 fig.update_yaxes(side="right", row=1, col=idx+1)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 50},
-        legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5))
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.2, margin={'l': 0, 'r': 0, 'b': 0, 't': 50},
+        legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5,
+                    entrywidth=0.3, entrywidthmode='fraction'))
     fig.show()
     fig.write_image(f'env_trades.pdf')
 
@@ -149,21 +187,20 @@ def create_all(databases):
             fig.add_trace(
                 go.Scatter(x=time_acc_power[xaxis][env], y=time_acc_power[yaxis][env], name=env,
                         mode='markers', marker=dict(color=env_cols[env], symbol=env_symb[env]),
-                        legendgroup=env, showlegend=idx==0), row=1, col=idx+1
+                        showlegend=False), row=1, col=idx+1
             )
         fig.update_xaxes(title_text=xaxis, row=1, col=idx+1)
         fig.update_yaxes(title_text=yaxis, row=1, col=idx+1)
         if idx == 1:
             fig.update_yaxes(side="right", row=1, col=idx+1)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 50},
-        legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5))
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 50})
     fig.show()
     fig.write_image(f'env_suut_trades.pdf')
     
 
     # compound imagenet env trades
     fig = go.Figure(
-        layout={'width': PLOT_WIDTH, 'height': PLOT_HEIGHT, 'margin': {'l': 0, 'r': 0, 'b': 0, 't': 0},
+        layout={'width': PLOT_WIDTH, 'height': PLOT_HEIGHT*1.2, 'margin': {'l': 0, 'r': 0, 'b': 0, 't': 0},
                 'yaxis':{'title': r'$\text{Overall performance } \bar M$'}},
         data=[
             go.Scatter(x=model_names, y=vals, name=env, mode='markers',
@@ -173,7 +210,8 @@ def create_all(databases):
             ),) for i, (env, vals) in enumerate(others['comp'].items())
         ]
     )
-    fig.update_layout( legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5) )
+    fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5,
+                                   entrywidth=0.3, entrywidthmode='fraction' ))
     fig.show()
     fig.write_image(f'environment_compound.pdf')
 
@@ -229,7 +267,7 @@ def create_all(databases):
             index_vals = (np.array(data['index']) - i_min) / (i_max - i_min)
             node_col = sample_colorscale(RATING_COLOR_SCALE, [1-val for val in index_vals])
             fig.add_trace(go.Scatter(
-                x=data['x'], y=data['y'], name=env_name.split()[1],
+                x=data['x'], y=data['y'], name=f'{env_name.split()[1]} Inference',
                 mode='markers', marker_symbol=ENV_SYMBOLS[env_i],
                 legendgroup=env_name.split()[1], marker=dict(color=node_col, size=marker_width),
                 marker_line=dict(width=marker_width / 5, color='black'), showlegend=p_idx==0), row=p_idx+1, col=1
@@ -237,8 +275,9 @@ def create_all(databases):
         fig.update_yaxes(title_text=r'$\text{{H} - Quality average } \bar Q$'.replace('{H}', host), range=[0.82, 1.02], row=p_idx+1, col=1)
         if p_idx == len(host_envs_map) - 1:
             fig.update_xaxes(title_text=r'$\text{Resource average } \bar R$', range=[0.00, 1.02], row=p_idx+1, col=1)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT * 2.5, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
-                      legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5))
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2.5, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
+                      legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5,
+                                  entrywidth=0.3, entrywidthmode='fraction'))
     fig.show()
     fig.write_image(f"qual_res_all.pdf")
 
