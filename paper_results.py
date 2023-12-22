@@ -140,7 +140,7 @@ def create_all(databases):
     bins1 = [ (bins[b_idx] + bins[b_idx+1]) / 2 for b_idx in range(bins.size - 1) ]
     _, bins = np.histogram([], bins=n_bins, range=b_range2)
     bins2 = [ (bins[b_idx] + bins[b_idx+1]) / 2 for b_idx in range(bins.size - 1) ]
-    field1, field2, lab1, lab2 = 'resource_index', 'quality_index', r'$\text{Resource average diff via {A}}: \delta \bar Q$', r'$\text{Quality average diff via {A}}: \delta \bar Q$'
+    field1, field2, lab1, lab2 = 'resource_index', 'quality_index', r'$\text{Resource average diff via {A}}: \Delta \bar Q$', r'$\text{Quality average diff via {A}}: \Delta \bar Q$'
     for idx, usbacc in enumerate(['NCS', 'TPU']):
         for d_idx, (db, task) in enumerate(zip(databases.values(), ['Classification', 'Segmentation'])):
             db = db[0]
@@ -157,10 +157,10 @@ def create_all(databases):
                         except IndexError:
                             pass
                     occ, _ = np.histogram(results, bins=n_bins, range=b_range)
-                    name = r'$\text{'+f'{task} on {host}'+'}$'
+                    name = f'{task} on {host}'
                     fig.add_trace(go.Bar(x=bins, y=occ, name=name, marker_color=col, marker_pattern_shape=PATTERNS[d_idx+1], legendgroup=name, showlegend=idx+s_idx==0), row=s_idx+1, col=idx+1)
                     fig.update_xaxes(title_text=label.replace('{A}', usbacc), row=s_idx+1, col=idx+1)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.5, margin={'l': 0, 'r': 0, 'b': 0, 't': 50},
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.7, margin={'l': 0, 'r': 0, 'b': 0, 't': 50},
                       barmode='stack', xaxis={'categoryorder':'category ascending'},
                       legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5,
                                   entrywidth=0.3, entrywidthmode='fraction'))
