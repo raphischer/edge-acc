@@ -70,7 +70,8 @@ def create_all(databases):
     model_names = [f'{mod[:3]}..{mod[-5:]}' if mod is not None and len(mod) > 10 else mod for mod in models]
 
     #############   COMPARISON TABLE
-
+    count_type, count_improv = {'NCS': 0, 'TPU': 0}, []
+    color_sep = [20, 60]
     TEX_TABLE_GENERAL = r'''\begin{tabular}{c|cc|cc|cc}
         Model & \multicolumn{2}{c}{Desktop Power Draw [Ws]} & \multicolumn{2}{c}{Laptop Power Draw [Ws]} & \multicolumn{2}{c}{RasPi Power Draw [Ws]} \\
          & Host & Acc (Type) (Rel) & Host & Acc (Type) (Rel) & Host & Acc (Type) (Rel) \\
@@ -92,26 +93,36 @@ def create_all(databases):
                     host = None
                 try:
                     best = subdb[subdb['backend'] == 'NCS']['approx_USB_power_draw'].iloc[0]['value']
+                    acc = r'\colorbox{RA}{NCS}'
                 except IndexError:
                     best = 0
                 try:
                     TPU = subdb[subdb['backend'] == 'TPU']['approx_USB_power_draw'].iloc[0]['value']
+                    if best == 0: # NCS not applicable use TPU
+                        best = TPU
+                    else: # choose best of TPU and NCS
+                        best = min(best, TPU)
+                    if best == TPU:
+                        acc = r'\colorbox{RC}{TPU}'
                 except IndexError:
-                    TPU = 0
-                best = TPU if best == 0 else min(best, TPU)
-                acc = r'\colorbox{RA}{NCS}' if best != TPU else r'\colorbox{RC}{TPU}'
+                    pass
                 to_add = ['---', '---']
                 if host is not None:
                     to_add[0] = f'{host:4.2f}'
                     if best > 0:
                         rel = best / host * 100
-                        if rel < 15:
+                        count_improv.append(rel)
+                        if rel < color_sep[0]:
                             rel = r'\colorbox{RA}{' + f'{rel:2.0f}' + r'\%}'
-                        elif rel < 60:
+                        elif rel < color_sep[1]:
                             rel = r'\colorbox{RC}{' + f'{rel:2.0f}' + r'\%}'
                         else: 
                             rel = r'\colorbox{RE}{' + f'{rel:2.0f}' + r'\%}'
                         to_add[1] = f'{best:4.2f} ({acc}) ({rel})'
+                        if 'TPU' in acc:
+                            count_type['TPU'] += 1
+                        else:
+                            count_type['NCS'] += 1
                 row = row + to_add
             rows.append(row)
     # bold print best
@@ -131,6 +142,19 @@ def create_all(databases):
     fig.write_image("dummy.pdf")
     time.sleep(0.5)
     os.remove("dummy.pdf")
+
+
+    # COMP TABLE BARS
+    fig = make_subplots(rows=1, cols=2, shared_yaxes=True, horizontal_spacing=0.04)
+    for (type, count), c_idx in zip(count_type.items(), [0, 2]):
+        fig.add_trace( go.Bar(x=[type], y=[count], marker_color=RATING_COLORS[c_idx], opacity=0.5, showlegend=False), row=1, col=1 )
+    for (sep1, sep2), text, c_idx in zip([(0, 20), (20, 60), (60, 1000)], ['< 20%', '< 60%', '>= 60%'], [0, 2, 4]):
+        fig.add_trace( go.Histogram(x=[impr for impr in count_improv if impr >= sep1 and impr < sep2 ],
+            name=text, marker_color=RATING_COLORS[c_idx], opacity=0.6), row=1, col=2 )
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*0.5, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
+        legend=dict(yanchor="top", y=1.0, xanchor="right", x=1.0))
+    fig.show()
+    fig.write_image(f'improv_table_bars.pdf')
 
 
     fig = make_subplots(rows=2, cols=2, shared_yaxes=True, vertical_spacing=0.15, horizontal_spacing=0.04)
