@@ -48,6 +48,7 @@ def raspi_power_draw(row):
     else:
         return row['power_draw'] 
 
+# CHOOSE ALL DATAFRAMES YOU WANT TO INCLUDE FOR THE FINAL RESULTS:
 with open(os.getcwd()+'/result_databases/workstation_classification_final_18_12_2023.pkl', 'rb') as f:
     tmp_data = pickle.load(f)
     tmp_data.drop(tmp_data.index[(tmp_data['architecture'] == 'Workstation') & (tmp_data['batch_size']==32)],inplace=True)
