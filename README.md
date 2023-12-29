@@ -1,7 +1,19 @@
 # View our experimental Results in an interactive Console
 
+To view our experimental results, ymake sure you have the the following required python packages installed:
+- numpy
+- pandas
+- pint
+- scipy
+- dash
+- dash_bootstrap_components
+- Pillow
+- reportlab
+- fitz
+- frontend
+- plotly
 
-
+Run our script **main.py**. Interactive plotly graphs will open in your standard browser. 
 
 # Models that we considered:
 ### Nets compared for Imagenet-Classification Task:
@@ -9,7 +21,8 @@
 ## Nets compared for Imagenet-Segmentation Task:
 'yolov8s', 'yolov8n', 'yolov8m', 'yolov8x', yolov8l'
 
-
+## EdgeTPU Setup
+- Follow guide: 
 ## NCS Setup
 - Follow guide: https://docs.openvino.ai/2022.3/openvino_docs_install_guides_installing_openvino_from_archive_linux.html
 - Step 2 (environment config) needs to be performed in each session!
