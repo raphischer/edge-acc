@@ -151,13 +151,12 @@ if __name__ == '__main__':
   parser.add_argument('-b',"--backend", default="tflite_edgetpu", type=str, choices=["tflite_edgetpu","tf_gpu","tf_cpu","NCS2"], help="machine learning software to use")
   parser.add_argument('-md', '--monitoringdir' , default = os.path.join(os.getcwd(),'logs/segm_test') )
   parser.add_argument('-d',"--dataset", default="COCO128", type=str, choices=["COCO","COCO128"], help="dataset to use")
-  # parser.add_argument('-dd',"--datadir", default=os.path.join(os.getcwd(),'mnt_data/staay/'), choices=["/tmp/yolo/",os.path.join(os.getcwd(),'mnt_data/staay/')], type=str, help="Directory that includes coco.yaml/coco128-seg.yaml (and corresponding data directories")
-  parser.add_argument('-dd', '--datadir' , default='mnt_data/staay' )
-  parser.add_argument('-modd', '--modeldir' , default = 'mnt_data/staay/models/' )
+  parser.add_argument('-modata', '--modelDataDir' , default = 'mnt_data/staay/' )
 
   args = parser.parse_args()
 
-  datadir = args.datadir
+  datadir = args.modelDataDir
+  modeldir = os.path.join(args.modelDataDir,'models')
   print(datadir)
   model_name = args.modelname
   dataset = args.dataset
@@ -170,15 +169,15 @@ if __name__ == '__main__':
   backend = args.backend
   duration = accuracy = precision_B = recall_B = mAP50_B = mAP50_95_B = precision_M = recall_M = mAP50_M =  mAP50_95_M = 0
   if backend == 'tflite_edgetpu':
-    duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M  = edgetpu_inference(model_name, dataset, targetDir, datadir, args.modeldir)     
+    duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M  = edgetpu_inference(model_name, dataset, targetDir, datadir, modeldir)     
   elif backend == 'NCS2':
-    duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M  = ncs2_inference(model_name, dataset, targetDir, datadir, args.modeldir)
+    duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M  = ncs2_inference(model_name, dataset, targetDir, datadir, modeldir)
   elif backend == 'tf_gpu': # No Multi GPU
-    backend_change, duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M  = tf_inference_gpu(model_name, dataset, targetDir, datadir, args.modeldir)
+    backend_change, duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M  = tf_inference_gpu(model_name, dataset, targetDir, datadir, modeldir)
     if backend_change:
       backend = 'tf_cpu'
   elif backend == 'tf_cpu':
-    duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M = tf_inference_cpu(model_name, dataset, targetDir, datadir, args.modeldir)
+    duration, precision_B, recall_B, mAP50_B, mAP50_95_B, precision_M, recall_M, mAP50_M,  mAP50_95_M = tf_inference_cpu(model_name, dataset, targetDir, datadir, modeldir)
 
    
   

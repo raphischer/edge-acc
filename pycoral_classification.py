@@ -146,7 +146,7 @@ def ncs2_inference(model_name, x, targetDir, modDir):
   return (tflite_end_time - tflite_start_time)*1000, final_predictions_1, final_predictions_3, final_predictions_5, final_predictions_10
 
 
-def tf_inference(model_name,x,targetDir):
+def tf_inference(model_name,x,targetDir,batch_size=64):
   from helper_scripts.load_models import prepare_model
   model = prepare_model(model_name)
   emissions_tracker = OfflineEmissionsTracker(log_level='warning', country_iso_code="DEU", save_to_file=True, output_dir = targetDir)
@@ -154,7 +154,7 @@ def tf_inference(model_name,x,targetDir):
   try:
     emissions_tracker.start()
     tflite_start_time = time.time()
-    prediction = model.predict(x_to_predict, batch_size=64)
+    prediction = model.predict(x_to_predict, batch_size)
     tflite_end_time = time.time()
     emissions_tracker.stop()
   except:
@@ -241,17 +241,21 @@ if __name__ == '__main__':
   parser.add_argument('-mn','--modelname', default='ResNet50', help='Model to view')
   parser.add_argument('-b',"--backend", default="tf_cpu", type=str, choices=["tflite_edgetpu","tf_gpu","tf_cpu","NCS2"], help="machine learning software to use") # "all" currently not working due to tfds/tf/pycoral Interpreter wrapper bug
   parser.add_argument('-ic','--imageCount', default = 320, help="Size of validation dataset")
-  parser.add_argument('-md', '--monitoringdir' , default = os.path.join(os.getcwd(),'eval1') )
-  parser.add_argument('-dd', '--datadir' , default = 'mnt_data/staay/imagenet_data' )
-  parser.add_argument('-modd', '--modeldir' , default = 'mnt_data/staay/models/' )
+  parser.add_argument('-md', '--monitoringdir' , default = os.path.join(os.getcwd(),'eval_test') )
+  parser.add_argument('-modata', '--modelDataDir' , default = 'mnt_data/staay/' )
+  parser.add_argument('-bz','--batchSize', default = 1, help="Size of batches for inference")
+
   args = parser.parse_args()
   
   highest_pred_list_1 =  highest_pred_list_3 = highest_pred_list_5 = highest_pred_list_10 = []
   duration = 0
-  dataDir = os.path.join(args.datadir, args.modelname)
- 
-
+  dataDir = os.path.join(args.modelDataDir,'imagenet_data', args.modelname)
+  modelDir = os.path.join(args.modelDataDir,'models')
   backend = args.backend
+  batch_size = args.batchSize
+  if batch_size > 1 and args.backend not in ['tf_cpu','tf_gpu']:
+     print('Batch size will be automatically set to 1 because of the backend you chose.')
+                                
   failed_GPU_run = False
   model_name = args.modelname
   imageCount = int(args.imageCount)
@@ -265,15 +269,13 @@ if __name__ == '__main__':
  
   x, listOfLabels = loadData(dataDir,imageCount)
   if backend == 'tflite_edgetpu':
-    duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir, args.modeldir)    
-    print('couldnt compute '+model_name+' with TPU.')
+    duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir, modelDir)    
   elif backend == 'NCS2':
-    duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = ncs2_inference(model_name,x,targetDir, args.modeldir)    
-    print('couldnt compute '+model_name+' with NCS.')
+    duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = ncs2_inference(model_name,x,targetDir, modelDir)    
   elif backend == 'tf_gpu' :
     try: 
       nvmlInit() # Will throw an exception if there is no corresponding NVML Shared Library
-      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir)
+      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir,batch_size)
     except:
       failed_GPU_run = True # Dont save this run
       os.remove(targetDir+'/config.json')
@@ -282,7 +284,7 @@ if __name__ == '__main__':
       os.rmdir(targetDir)
       print('NO GPU Detected')
   elif backend == 'tf_cpu':
-    duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir)
+    duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir,batch_size)
  
   if not failed_GPU_run:
     accuracy_k1, accuracy_k3 ,accuracy_k5 ,accuracy_k10 = calcAccuracy(highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10,listOfLabels,imageCount)
@@ -301,7 +303,7 @@ if __name__ == '__main__':
                       'accuracy_k5': accuracy_k5,
                       'accuracy_k10': accuracy_k10,
                       'validation_size': imageCount,
-                      'batch_size': 64 if backend == 'tf_gpu' or backend == 'tf_cpu' else 1,
+                      'batch_size': batch_size if backend == 'tf_gpu' or backend == 'tf_cpu' else 1,
                       'task': 'classification'
                   }
     print(results)

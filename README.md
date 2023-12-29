@@ -1,8 +1,13 @@
-# imagenet-on-the-edge
-Nets compared for Imagenet-Classification Task:
-'ResNet50' 'DenseNet169'  'ResNet101V2' 'ResNet50V2' 'VGG16' 'Xception'  'DenseNet169'  'DenseNet121' 'DenseNet201' 'EfficientNetB0' 'InceptionV3' 'MobileNet' 'MobileNetV2' 'NASNetMobile' 'ResNet101' 
-Nets compared for Imagenet-Segmentation Task:
-'yolov8s', 'yolov8n', 'yolov8m'
+# View our experimental Results in an interactive Console
+
+
+
+
+# Models that we considered:
+### Nets compared for Imagenet-Classification Task:
+'DenseNet121' 'DenseNet169'  'DenseNet201'  'EfficientNetB0'  'EfficientNetB1'  'EfficientNetB2'  'EfficientNetB3'  'EfficientNetB4'  'EfficientNetB5'  'EfficientNetB6'  'EfficientNetB7'  'EfficientNetV2B0'  'EfficientNetV2B1'  'EfficientNetV2B2'  'EfficientNetV2B3'  'EfficientNetV2L'  'EfficientNetV2M'  'EfficientNetV2S'  'InceptionResNetV2'  'InceptionV3'  'MobileNet'  'MobileNetV2'  'NASNetLarge'  'NASNetMobile'  'ResNet101'  'ResNet152'  'ResNet50'  'ResNet101V2'  'ResNet152V2'  'ResNet50V2'  'VGG16'  'VGG19'  'Xception'  'MobileNetV3Large'  'MobileNetV3Small'
+## Nets compared for Imagenet-Segmentation Task:
+'yolov8s', 'yolov8n', 'yolov8m', 'yolov8x', yolov8l'
 
 
 ## NCS Setup

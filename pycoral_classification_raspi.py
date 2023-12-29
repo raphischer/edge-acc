@@ -152,14 +152,14 @@ def ncs2_inference(model_name,x,targetDir,modDir,imageCount):
 
   return (tflite_end_time - tflite_start_time)*1000, final_predictions_1, final_predictions_3, final_predictions_5, final_predictions_10
 
-def tf_inference(model_name,x,targetDir, imageCount):
+def tf_inference(model_name,x,targetDir, imageCount, batch_size = 16):
   from helper_scripts.load_models import prepare_model
   model = prepare_model(model_name)
   emissions_tracker = OfflineEmissionsTracker(log_level='warning', country_iso_code="DEU", save_to_file=True, output_dir = targetDir)
   x_to_predict = np.stack( x, axis=0 ).squeeze()
   emissions_tracker.start()
   tflite_start_time = time.time()
-  prediction = model.predict(x_to_predict, batch_size=16 )
+  prediction = model.predict(x_to_predict, batch_size )
   tflite_end_time = time.time()
   emissions_tracker.stop()
   final_predictions_1 = []
@@ -274,21 +274,24 @@ def loadData(dataDir,imageCount,current_batch_size, macro_batch_size, iteration)
   return listOfImages,listOfLabels[relevant_selection_slice]
 
 
-  return listOfImages[0:batch_size], listOfLabels[0:batch_size], listOfImages[batch_size:], listOfLabels[batch_size:]
            
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('-mn','--modelname', default='ResNet50', help='Model to view')
   parser.add_argument('-b',"--backend", default="tf_cpu", type=str, choices=["tflite_edgetpu","tf_gpu","tf_cpu","NCS2","tflite"], help="machine learning software to use") # "all" currently not working due to tfds/tf/pycoral Interpreter wrapper bug
   parser.add_argument('-ic','--imageCount', default = 32, help="Size of validation dataset")
-  parser.add_argument('-md', '--monitoringdir' , default = os.path.join(os.getcwd(),'raspi_eval') )
-  parser.add_argument('-dd', '--datadir' , default = 'mnt_data/staay/imagenet_data' )
-  parser.add_argument('-modd', '--modeldir' , default = 'mnt_data/staay/models/' )
+  parser.add_argument('-md', '--monitoringdir' , default = os.path.join(os.getcwd(),'eval_test_raspi') )
+  parser.add_argument('-modata', '--modelDataDir' , default = 'mnt_data/staay/' )
   parser.add_argument('-mbs','--macroBatchSize', default = 192, help="Size of batches for loaded data")
+  parser.add_argument('-bz','--batchSize', default = 1, help="Size of batches for inference")
 
-  
+   
   args = parser.parse_args()
   macro_batch_size = args.macroBatchSize
+  batch_size = args.batchSize
+  if batch_size > 1 and args.backend not in ['tf_cpu','tf_gpu']:
+     print('Batch size will be automatically set to 1 because of the backend you chose.')
+                                             
   iterations = round(int(args.imageCount) / macro_batch_size )
   rest = round(int(args.imageCount) % macro_batch_size )
   print('ITERATIONS '+str(iterations))
@@ -296,8 +299,8 @@ if __name__ == '__main__':
 
   highest_pred_list_1 =  highest_pred_list_3 = highest_pred_list_5 = highest_pred_list_10 = []
   duration = 0
-  dataDir = os.path.join(args.datadir, args.modelname)
- 
+  dataDir = os.path.join(args.modelDataDir,'imagenet_data', args.modelname)
+  modelDir = os.path.join(args.modelDataDir, 'models')
 
   backend = args.backend
   failed_GPU_run = False
@@ -306,7 +309,6 @@ if __name__ == '__main__':
   assert imageCount % 32 == 0, f"pick imagecount that is a multiple of 32, got {imageCount}"
   monitoringDir = args.monitoringdir
   targetDir = create_output_dir(dir = monitoringDir,prefix = 'infer_classification', config =args.__dict__)
-  #targetDir = os.path.join(monitoringDir,model_name, args.backend) #Where to save the monitoring summary
   
   if not os.path.exists(targetDir):
     os.makedirs(targetDir)
@@ -322,9 +324,9 @@ if __name__ == '__main__':
     print(len(listOfLabels))
     print(imageCount)
     if backend == 'tflite_edgetpu':
-      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir, args.modeldir,imageCount)    
+      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = edgetpu_inference(model_name,x,targetDir, modelDir,imageCount)    
     elif backend == 'NCS2':
-      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = ncs2_inference(model_name,x,targetDir, args.modeldir,imageCount)    
+      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = ncs2_inference(model_name,x,targetDir, modelDir,imageCount)    
     elif backend == 'tf_gpu':
       try: 
         nvmlInit() # Will throw an exception if there is no corresponding NVML Shared Library
@@ -337,9 +339,9 @@ if __name__ == '__main__':
         os.rmdir(targetDir)
         print('NO GPU Detected')
     elif backend == 'tf_cpu':
-      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir,imageCount)
+      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tf_inference(model_name, x, targetDir,imageCount,batch_size)
     elif backend == 'tflite' :
-      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tflite_inference(model_name, x, targetDir, args.modeldir,imageCount)
+      duration, highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10 = tflite_inference(model_name, x, targetDir, modelDir,imageCount)
 
     if not failed_GPU_run:
       accuracy_k1, accuracy_k3 ,accuracy_k5 ,accuracy_k10 = calcAccuracy(highest_pred_list_1,  highest_pred_list_3, highest_pred_list_5, highest_pred_list_10,listOfLabels,imageCount)
@@ -358,7 +360,7 @@ if __name__ == '__main__':
                         'accuracy_k5': accuracy_k5,
                         'accuracy_k10': accuracy_k10,
                         'validation_size': imageCount,
-                        'batch_size': 16 if backend == 'tf_gpu' or backend == 'tf_cpu' else 1,
+                        'batch_size': batch_size if backend == 'tf_gpu' or backend == 'tf_cpu' else 1,
                         'task': 'classification'
                     }
       print(results)
