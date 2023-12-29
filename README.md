@@ -18,7 +18,7 @@ Run our script ```main.py```. Interactive plotly graphs will open in your standa
 - ```batchsize_comparison_results``` contains the tables that we used to compare the performance of different batch sizes on our three host systems. 
 - ```classification_database``` and ```segmentation_database``` contain the results and configurations of our experimental results. These two directories are accessed by ```main.py``` to create the paper results.
 - ```creator_scripts``` contain the python scripts used to create the datasets used for the experiment as well as the model files for the different model formats required by the accelerators TPU and NCS.
-- ```helper_scripts``` contain miscelaneous scripts that are used by other scripts or that can be used to clean up experimental result files.
+- ```helper_scripts``` contain miscelaneous scripts that are used by other scripts or that can be used to clean up experimental result files. Model metadata that we use for analysis is collected with the corresponding scripts. Our batch size comparison that determines the batch size of used in our CPU experiments is included here. 
 - ```paper_results``` contain our result graphs as PDF files.
 - ```result_databases``` contain the pickled pandas dataframes created by ```load_experiment_logs.py``` that are further merged with the ```merge_all_databases.py``` script.
 - ```strep``` contains scripts used to create our interactive model results.
@@ -42,6 +42,28 @@ Run our script ```main.py```. Interactive plotly graphs will open in your standa
 - udev Regeln angepasst werden und dein Nutzer muss der users Gruppe hinzugefigt werden. https://docs.openvino.ai/2022.3/openvino_docs_install_guides_configurations_for_ncs2.html#ncs-guide
 - pip install openvino
 
+## 1) Setup Directories and Download Raw Data
+- Make sure you **created your model and data directory** in our scripts, we use the directory name ```mnt_data```. 
+- In ```mnt_data```, we have the subfolders ```unpacked``` and ```staay```. In ```unpacked```, we downloaded the 1% imagenet database. (https://www.image-net.org/)
+- In ```staay```, we have the ```imagenet_data``` directory where our preprocessed data is saved as well as the ```models``` directory where the models are saved in the corresponding subdirectories ```edgetpu_models,openVINO,saved_models,tflite_models```. These directories get filled by using the scripts in the ```creator_scripts``` directory.
+- Also in ```staay``` the files ```coco.yaml``` and ```coco128-seg.yaml``` should be included for segmentation with YOLO models. (Follow : https://docs.ultralytics.com/datasets/detect/coco/#applications)
+- If you choose to change the naming of your files, make sure to adjust all occurences of ```mnt_data``` in this repositories scripts. 
+
+## 2) Fill Directories using Creator Scripts
+
+- Using the ```create_imagenet_dataset.py``` script, create the preprocessed imagenet data of the models that you want to compare. You may choose from any of the Tensorflow2 models listed in this readme. It saves the model-individualized preprocessed datasets as numpy arrays in the ```imagenet_data``` file.
+- Use the ```export_tflite_models.py``` scripts to export the models into Tensorflow Lite models. These can then converted into TPU-compatible models using the ```export_edgetpu_models.py``` script. The latter script uses the EdgeTPU Compiler.
+- Export the saved_models into NCS compatible models using ```export_NCS_models.py```. This uses the model optimizer ```mo``` provided by openVINO2022.3. Make sure to save the created models in the correct directory (```models/openVINO```).
+- Execute the ```create_YOLO_models.py``` script to create YOLO models as saved_model, edgeTPU compatible model and openVINO model. Save accordingly.
+## 3) Run Experiments
+- Now you can execute singular runs with the ```pycoral_``` scripts. Adjust all flags to your liking.
+- You can even test all of your created models by using the ```run_all``` scripts adjusting the flags to your liking. 
+- This will create a directory with the experiments logging. (Monitoring directory)
+
+## 4) Create database from monitoring directories
+- Adjust the path at the end of ```load_experiment_logs.py``` to your monitoring directory and execute the script. This will merge the directory into one dataframe that is saved in ```result_databases```
+- In ```merge_all_databases.py```, adjust all of the databases you want to include from ```result_databases```. This will create the final databases in the ```classification_database``` and ```segmentation_database``` directories.
+- Now ```main.py``` can be run with the newly included experiment results. 
 
 ### ValueError: Failed to load delegate from libedgetpu.so.1
 - de- and reconnect edgeTPU

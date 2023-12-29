@@ -4,7 +4,7 @@ import json
 import numpy as np
 from tqdm import tqdm
 
-data_dir = '/home/lfischer/mnt_data/staay/imagenet_data'
+data_dir = os.path.join(os.getcwd(),'mnt_data/staay/imagenet_data')
 test_images = ['n01440764/450.npy', 'n03485407/5015.npy', 'n04265275/7995.npy', 'n03131574/8836.npy', 'n01614925/9938.npy']
 
 imgs = {}

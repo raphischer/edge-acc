@@ -5,7 +5,7 @@ import argparse
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
-path = '/home/staay/Git/imagenet-on-the-edge/mnt_data/staay/final_final_raspi'
+path = os.getcwd()+'/mnt_data/staay/final_final_raspi'
 for (dirpath, dirnames, filenames) in os.walk(path):
     for dirname in dirnames:
         print(dirname)

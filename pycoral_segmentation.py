@@ -37,7 +37,7 @@ def ncs2_inference(model_name, dataset, targetDir, datadir, modeldir):
   if dataset == "COCO":
     print('START COCO INFERENCE')
     emissions_tracker.start()
-    metrics = model.val('/home/staay/Git/imagenet-on-the-edge/mnt_data/staay/coco.yaml')
+    metrics = model.val(os.getcwd()+'/mnt_data/staay/coco.yaml')
     emissions_tracker.stop()
     print('INFERENCE FINISHED')
   else:
@@ -63,7 +63,7 @@ def edgetpu_inference(model_name, dataset, targetDir, datadir, modeldir):
   if dataset == "COCO":
     print('START COCO INFERENCE')
     emissions_tracker.start()
-    metrics = model.val('/home/staay/Git/imagenet-on-the-edge/mnt_data/staay/coco.yaml')
+    metrics = model.val(os.getcwd()+'/mnt_data/staay/coco.yaml')
     emissions_tracker.stop()
     print('INFERENCE FINISHED')
   else:
