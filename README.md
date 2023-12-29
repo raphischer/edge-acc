@@ -12,7 +12,7 @@ Run our script ```main.py```. Interactive plotly graphs will open in your standa
 
 **Models compared for Imagenet-Segmentation Task:**
 
-'yolov8s', 'yolov8n', 'yolov8m', 'yolov8x', yolov8l'
+'yolov8s', 'yolov8n', 'yolov8m', 'yolov8x', 'yolov8l'
 # How the repository is structured:
 ## Directories
 - ```batchsize_comparison_results``` contains the tables that we used to compare the performance of different batch sizes on our three host systems. 
