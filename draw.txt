@@ -1,0 +1,7 @@
+model,TPU,NCS
+ResNet50,1.0,1.67
+DenseNet169,1.16,1.61
+DenseNet201,1.1,1.67
+EfficientNetB0,0.96
+InceptionV3,1.03,1.67
+MobileNetV2,1.15,1.42
