@@ -31,11 +31,12 @@ def getFamilyName(model_name):
     return model_family
 
 def approx_USB_power_draw(row):
-    if row['backend'] == 'tflite_edgetpu':
-        return row['power_draw'] + 4.5 * (row['running_time']) # assume constant 4.5 watt
-    elif row['backend'] == 'NCS2':
-        return row['power_draw'] + 4.5 * (row['running_time']) # assume constant 4.5 watt
+    if row['backend'] == 'TPU':
+        return row['power_draw'] + 1.15 * (row['running_time']) # assume constant 4.5 watt
+    elif row['backend'] == 'NCS':
+        return row['power_draw'] + 1 * (row['running_time']) # assume constant 4.5 watt
     else:
+        print('exception)')
         return row['power_draw'] 
     
 def raspi_power_draw(row):
@@ -108,8 +109,8 @@ data["total_parameters"]=pd.to_numeric(data["total_parameters"])
 
 data["trainable_parameters"]=pd.to_numeric(data["trainable_parameters"])
 data["non_trainable_parameters"]=pd.to_numeric(data["non_trainable_parameters"])
-data["power_draw"] = data["power_draw"]
-data["approx_USB_power_draw"] = data["approx_USB_power_draw"]
+data["power_draw"] = 0 #data["power_draw"]
+data["approx_USB_power_draw"] =  data["approx_USB_power_draw"]
 
 
 
@@ -132,7 +133,7 @@ export_class_df = export_class_df.groupby(['model','backend','architecture']).me
 export_class_df['task'] = 'infer'
 export_class_df['dataset'] = 'imagenet'
 export_class_df['environment'] = export_class_df['architecture'] +' ' +export_class_df['backend']
-
+export_class_df.to_csv(os.path.join(os.getcwd(),'classification_database/database_HIGH.csv'))
 
 export_class_df.to_pickle(os.path.join(os.getcwd(),'classification_database/database.pkl')) 
 export_seg_df = segmentation_data.drop(['index','accuracy_k1', 'accuracy_k3',
@@ -144,6 +145,7 @@ export_seg_df['dataset'] = 'coco'
 export_seg_df['environment'] = export_seg_df['architecture'] + ' ' + export_seg_df['backend']
 
 export_seg_df.to_pickle(os.path.join(os.getcwd(),'segmentation_database/database.pkl'))
+
 
 seg_pt_power_draw = pd.pivot_table(export_seg_df, values = 'approx_USB_power_draw',index = 'environment', columns = 'model')
 

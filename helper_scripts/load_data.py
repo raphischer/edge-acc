@@ -4,7 +4,7 @@ import os
 
 
 
-def load_data(rootdir='mnt_data', raw_sub='raw', unpacked_sub='unpacked', preprocess=None, batch_size=32, n_batches=None):
+def load_data(rootdir='mnt_data', raw_sub='raw', unpacked_sub='/Users/alex/Documents/edge-acc/mnt_data/unpacked', preprocess=None, batch_size=32, n_batches=None):
     
     from tensorflow import config
     from tensorflow_datasets import download, load
@@ -15,7 +15,7 @@ def load_data(rootdir='mnt_data', raw_sub='raw', unpacked_sub='unpacked', prepro
         'download_config': download.DownloadConfig(extract_dir=write_dir, manual_dir=raw_dir),
     }
 
-    ds, info = load('imagenet2012_subset',
+    ds, info = load('imagenette',
         data_dir=write_dir,         
         split='validation',
         shuffle_files=False,

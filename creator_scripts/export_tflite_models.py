@@ -1,25 +1,30 @@
 import tensorflow as tf
 import tensorflow_datasets as tfds
+import sys
+sys.path.append(sys.path[0]+'/..')
 import os
 from tflite_support.metadata_writers import image_classifier
 from tflite_support.metadata_writers import writer_utils
 import tensorflow.keras 
-
+print(os.getcwd())
 
 from helper_scripts.load_data import load_data
 from helper_scripts.load_models import load_preprocessing, prepare_model#, MODELS
 
 
-models_dir=os.getcwd()+'/mnt_data/staay/models'
+models_dir='/Users/alex/Documents/edge-acc/mnt_data/staay/models'
+print('MODELS DIR '+models_dir)
 saved_models_dir = os.path.join(models_dir, 'saved_models')
 tflite_models_dir = os.path.join(models_dir, 'tflite_models')
 tflite_edgetpu_models_dir = os.path.join(models_dir, 'edgetpu_models')
 
 # ADJUST TO YOUR LIKING
-#MODELS = ['EfficientNetB0', 'EfficientNetB1', 'EfficientNetB2', 'EfficientNetB3', 'EfficientNetB4', 'EfficientNetB5', 'EfficientNetB6', 'EfficientNetB7', 'EfficientNetV2B0', 'EfficientNetV2B1', 'EfficientNetV2B2', 'EfficientNetV2B3', 'EfficientNetV2L', 'EfficientNetV2M', 'EfficientNetV2S', 'MobileNet', 'MobileNetV2', 'NASNetLarge',  'MobileNetV3Large', 'MobileNetV3Small']
-MODELS = ['EfficientNetB1']
+MODELS = ['EfficientNetB0', 'EfficientNetB1', 'EfficientNetB2', 'EfficientNetB3', 'EfficientNetB4', 'EfficientNetB5', 'EfficientNetB6', 'EfficientNetB7', 'EfficientNetV2B0', 'EfficientNetV2B1', 'EfficientNetV2B2', 'EfficientNetV2B3', 'EfficientNetV2L', 'EfficientNetV2M', 'EfficientNetV2S', 'MobileNet', 'MobileNetV2', 'NASNetLarge',  'MobileNetV3Large', 'MobileNetV3Small']
+#MODELS = ['EfficientNetB1']
 for model_name in MODELS:
+
   path_to_saved_model = os.path.join(saved_models_dir,model_name)
+  print('PATH TO SAVED DIR '+path_to_saved_model)
 
   if True: #not os.path.isdir(path_to_saved_model):
     # Modell erstellen & Als SavedModel abspeichern
@@ -71,7 +76,7 @@ for model_name in MODELS:
       with open(os.path.join(tflite_models_dir,model_name+'.tflite'), 'wb') as f:
         f.write(tflite_model)
     except Exception as inst:
-      print('COULD NOT CONVERT'+model_name)
+      print('COULD NOT CONVERT '+model_name)
       print(type(inst))    # the exception instance
       print(inst.args)     # arguments stored in .args
       print(inst)     
