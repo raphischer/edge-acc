@@ -1,5 +1,6 @@
 import os
 import time
+from itertools import product
 
 import numpy as np
 import pandas as pd
@@ -19,8 +20,8 @@ def rbg_to_rgba(rgb, alpha):
     return rgb.replace('rgb', 'rgba').replace(')', f',{alpha})')
 
 
-PLOT_WIDTH = 800
-PLOT_HEIGHT = PLOT_WIDTH // 3
+PLOT_WIDTH = 900
+PLOT_HEIGHT = PLOT_WIDTH // 4
 COLORS = ['#009ee3', '#983082', '#ffbc29', '#35cdb4', '#e82e82', '#59bdf7', '#ec6469', '#706f6f', '#4a4ad8', '#0c122b', '#ffffff']
 SEL_DS_TASK = {
     'ImageNetEff': ('imagenet', 'infer'),
@@ -47,7 +48,6 @@ def extract_results(subdb, field, scale, all_models):
 def create_all(databases):
     os.chdir('paper_results')
 
-
     ############## SETUP
 
     envs = sorted(pd.unique(databases['ImageNetEff'][0]['environment']).tolist())
@@ -71,10 +71,11 @@ def create_all(databases):
 
     #############   COMPARISON TABLE
     count_type, count_improv = {'NCS': 0, 'TPU': 0}, []
+    all_improvements = {'NCS': {'running_time': [], 'approx_USB_power_draw': []}, 'TPU': {'running_time': [], 'approx_USB_power_draw': []}}
     color_sep = [20, 60]
     TEX_TABLE_GENERAL = r'''\begin{tabular}{c|cc|cc|cc}
         Model & \multicolumn{2}{c}{Desktop Power Draw [Ws]} & \multicolumn{2}{c}{Laptop Power Draw [Ws]} & \multicolumn{2}{c}{RasPi Power Draw [Ws]} \\
-         & Host & Acc (Type) (Rel) & Host & Acc (Type) (Rel) & Host & Acc (Type) (Rel) \\
+         & CPU-only & Acc (Type) (Rel) & CPU-only & Acc (Type) (Rel) & CPU-only & Acc (Type) (Rel) \\
          \midrule
         $DATA
     \end{tabular}'''
@@ -87,42 +88,42 @@ def create_all(databases):
             row = [short]
             for host in HOSTS:
                 subdb = db[(db['model'] == model) & (db['architecture'] == host)]
-                try:
-                    host = subdb[subdb['backend'] == 'CPU']['approx_USB_power_draw'].iloc[0]['value']
-                except IndexError:
-                    host = None
-                try:
-                    best = subdb[subdb['backend'] == 'NCS']['approx_USB_power_draw'].iloc[0]['value']
-                    acc = r'\colorbox{RA}{NCS}'
-                except IndexError:
-                    best = 0
-                try:
-                    TPU = subdb[subdb['backend'] == 'TPU']['approx_USB_power_draw'].iloc[0]['value']
-                    if best == 0: # NCS not applicable use TPU
-                        best = TPU
-                    else: # choose best of TPU and NCS
-                        best = min(best, TPU)
-                    if best == TPU:
-                        acc = r'\colorbox{RC}{TPU}'
-                except IndexError:
-                    pass
+                results = {'approx_USB_power_draw': {}, 'running_time': {}}
+                for proc in ['CPU', 'NCS', 'TPU']:
+                    for metric in results.keys():
+                        try:
+                            results[metric][proc] = subdb[subdb['backend'] == proc][metric].iloc[0]['value']
+                        except IndexError:
+                            pass
                 to_add = ['---', '---']
-                if host is not None:
-                    to_add[0] = f'{host:4.2f}'
-                    if best > 0:
-                        rel = best / host * 100
-                        count_improv.append(rel)
-                        if rel < color_sep[0]:
-                            rel = r'\colorbox{RA}{' + f'{rel:2.0f}' + r'\%}'
-                        elif rel < color_sep[1]:
-                            rel = r'\colorbox{RC}{' + f'{rel:2.0f}' + r'\%}'
-                        else: 
-                            rel = r'\colorbox{RE}{' + f'{rel:2.0f}' + r'\%}'
-                        to_add[1] = f'{best:4.2f} ({acc}) ({rel})'
-                        if 'TPU' in acc:
-                            count_type['TPU'] += 1
-                        else:
-                            count_type['NCS'] += 1
+                if 'CPU' in results['approx_USB_power_draw']:
+                    to_add[0] = f"{results['approx_USB_power_draw']['CPU']:4.2f}"
+                    for metric, proc in product(results.keys(), ['TPU', 'NCS']):
+                        try:
+                            all_improvements[proc][metric].append( results[metric][proc] / results[metric]['CPU'] * 100 )
+                        except KeyError:
+                            all_improvements[proc][metric].append( np.inf )
+                    if all_improvements['NCS']['approx_USB_power_draw'][-1] < all_improvements['TPU']['approx_USB_power_draw'][-1]:
+                        acc = r'\colorbox{RA}{NCS}'
+                        best = results['approx_USB_power_draw']['NCS']
+                        rel = all_improvements['NCS']['approx_USB_power_draw'][-1]
+                    else:
+                        acc = r'\colorbox{RC}{TPU}'
+                        best = results['approx_USB_power_draw']['TPU']
+                        rel = all_improvements['TPU']['approx_USB_power_draw'][-1]
+                    
+                    count_improv.append(rel)
+                    if rel < color_sep[0]:
+                        rel = r'\colorbox{RA}{' + f'{rel:2.0f}' + r'\%}'
+                    elif rel < color_sep[1]:
+                        rel = r'\colorbox{RC}{' + f'{rel:2.0f}' + r'\%}'
+                    else: 
+                        rel = r'\colorbox{RE}{' + f'{rel:2.0f}' + r'\%}'
+                    to_add[1] = f'{best:4.2f} ({acc}) ({rel})'
+                    if 'TPU' in acc:
+                        count_type['TPU'] += 1
+                    else:
+                        count_type['NCS'] += 1
                 row = row + to_add
             rows.append(row)
     # bold print best
@@ -142,6 +143,48 @@ def create_all(databases):
     fig.write_image("dummy.pdf")
     time.sleep(0.5)
     os.remove("dummy.pdf")
+
+
+    # distributions of relative improvements
+    fig = go.Figure()
+    fig.add_hline(y=100, line_dash="dot", annotation_text="CPU-only")
+    for proc, proc_vals in all_improvements.items():
+        x, y = [], []
+        for metric, metric_vals in proc_vals.items():
+            prop = databases['ImageNetEff'][1]['properties'][metric]
+            dropped = [val for val in metric_vals if not np.isinf(val)]
+            y = y + dropped
+            x = x + [f"{prop['name']} {prop['symbol']}"] * len(dropped)
+        fig.add_trace(go.Box(x=x, y=y, name=proc, marker_color=env_cols[f'Laptop {proc}']))
+    fig.update_layout(
+        yaxis_title='Relative consumption [%]', boxmode='group',
+        width=PLOT_WIDTH*0.5, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
+        legend=dict(title='Acceleration via', yanchor="top", y=1, xanchor="right", x=0.975, orientation="h", )
+    )
+    fig.write_image(f'rel_impro.pdf')
+    fig.show()
+    
+
+    # Variability Plots
+    def flatten(xss):
+        return [x for xs in xss for x in xs]
+    prop_meta = databases['ImageNetEff'][1]['properties']
+    a = pd.read_pickle('../result_databases/laptop_class_1.pkl').rename(columns={'power_draw': 'approx_USB_power_draw'})
+    b = pd.read_pickle('../result_databases/laptop_class_2.pkl').rename(columns={'power_draw': 'approx_USB_power_draw'})
+    cols = [col for col in a.columns if 'time' in col or 'power' in col or 'acc' in col]
+    both = np.array([a[cols].dropna(), b[cols].dropna()])
+    x = flatten([[f"{prop_meta[col]['shortname']} {prop_meta[col]['symbol']}"] * both.shape[1] for col in cols])
+    fig = go.Figure()
+    fig.add_trace(go.Box(x=x, y=np.swapaxes(both.mean(axis=0), 0, 1).flatten(), name='MEAN', marker_color=RATING_COLORS[0]))
+    fig.add_trace(go.Box(x=x, y=np.swapaxes(both.std(axis=0), 0, 1).flatten(), name='STD', marker_color=RATING_COLORS[4]))
+    fig.update_yaxes(type="log")
+    fig.update_layout(
+        yaxis_title='Values', boxmode='group',
+        width=PLOT_WIDTH*0.5, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
+        legend=dict(yanchor="top", y=1, xanchor="right", x=0.975, orientation="h", )
+    )
+    fig.write_image(f'stddev.pdf')
+    fig.show()
 
 
     # COMP TABLE BARS
@@ -233,7 +276,7 @@ def create_all(databases):
         fig.update_yaxes(title_text=metric, row=idx+1, col=1)
         if 'Ws' in metric:
             fig.update_yaxes(type="log", row=idx+1, col=1)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*3, margin={'l': 0, 'r': 0, 'b': 0, 't': 50},
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*3.5, margin={'l': 0, 'r': 0, 'b': 0, 't': 50},
                       legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5,
                                   entrywidth=0.3, entrywidthmode='fraction'))
     fig.show()
@@ -316,14 +359,14 @@ def create_all(databases):
                     theta=metr_names, fill='toself', name=r'$\text{{E}} : \bar M = {R}$'.replace('{E}', env.split()[1]).replace('{R}', f'{row["compound_index"].values[0]:4.2f}')
                 ))
         fig.update_layout(
-            polar=dict(radialaxis=dict(visible=True)), width=PLOT_WIDTH*0.33, height=PLOT_HEIGHT, title_y=0.965, title_x=0.5, title_text = r'$\text{' +f'{model} on {host}' + '}$',
-            legend=dict( yanchor="bottom", y=1.02, xanchor="center", x=0.5), margin={'l': 33, 'r': 33, 'b': 5, 't': 80}
+            polar=dict(radialaxis=dict(visible=True)), width=PLOT_WIDTH*0.33, height=PLOT_HEIGHT, title_y=0.95, title_x=0.5, title_text = r'$\text{' +f'{model} on {host}' + '}$',
+            legend=dict( yanchor="bottom", y=1.02, xanchor="center", x=0.5), margin={'l': 33, 'r': 33, 'b': 6, 't': 80}
         )
         fig.show()
         fig.write_image(f'true_best_{host}.pdf')
 
     # scatter plots
-        fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.02)
+    fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.02)
     xaxis, yaxis, marker_width, ax_border = 'resource_index', 'quality_index', 6, 0.1
     for p_idx, (host, host_envs) in enumerate(host_envs_map.items()):
         plot_data, _, _ = assemble_scatter_data(host_envs, db, 'index', xaxis, yaxis, meta, bounds)
@@ -368,34 +411,11 @@ def create_all(databases):
         fig.update_yaxes(title_text=r'$\text{{H} - Quality average } \bar Q$'.replace('{H}', host), range=[0.82, 1.02], row=p_idx+1, col=1)
         if p_idx == len(host_envs_map) - 1:
             fig.update_xaxes(title_text=r'$\text{Resource average } \bar R$', range=[0.00, 1.02], row=p_idx+1, col=1)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2.5, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*3, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
                       legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5,
                                   entrywidth=0.3, entrywidthmode='fraction'))
     fig.show()
     fig.write_image(f"qual_res_all.pdf")
-
-    
-        # fig.update_layout(xaxis_title=axis_title[0], yaxis_title=axis_title[1])
-        # fig.update_layout(legend=dict(x=.5, y=1, orientation="h", xanchor="center", yanchor="bottom",))
-        # fig.update_layout(xaxis=dict(showgrid=False), yaxis=dict(showgrid=False))
-        # min_x, max_x = np.min([min(data['x']) for data in plot_data.values()]), np.max([max(data['x']) for data in plot_data.values()])
-        # min_y, max_y = np.min([min(data['y']) for data in plot_data.values()]), np.max([max(data['y']) for data in plot_data.values()])
-        # diff_x, diff_y = max_x - min_x, max_y - min_y
-        # fig.update_layout(
-        #     xaxis_range=[min_x - ax_border * diff_x, max_x + ax_border * diff_x],
-        #     yaxis_range=[min_y - ax_border * diff_y, max_y + ax_border * diff_y],
-        #     margin={'l': 10, 'r': 10, 'b': 10, 't': 10}
-        # )
-        # return fig
-
-
-
-
-        # scatter = create_scatter_graph(plot_data, axis_names, marker_width=8, dark_mode=False)
-        # scatter.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
-        #     xaxis=dict(showgrid=True), yaxis=dict(showgrid=True), yaxis_range=[0.82, 1.02], xaxis_range=[0.00, 1.02], 
-        #     xaxis_title=r'$\text{Resource average } \bar R$', yaxis_title=r'$\text{Quality average } \bar Q$', 
-        #     legend=dict(x=1, y=1, orientation="v", xanchor="right", yanchor="top"))
 
 if __name__ == '__main__':
     pass

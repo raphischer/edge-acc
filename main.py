@@ -12,6 +12,9 @@ DATABASES = {
     #'Papers With Code': 'databases/paperswithcode/database.pkl',
 }
 
+INDEXMODE = 'best'
+REFERENCES = {'imagenet': 'MobileNetV2', 'coco': 'yolov8n-seg'}
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -35,14 +38,14 @@ if __name__ == '__main__':
         meta = load_meta(os.path.dirname(fname))
         # rate database
         database, metrics, xaxis_default, yaxis_default = find_relevant_metrics(database, meta)
-        rated_database, boundaries, real_boundaries, references = rate_database(database, meta)
+        rated_database, boundaries, real_boundaries, references = rate_database(database, meta, indexmode=INDEXMODE, references=REFERENCES)
 
         print(f'    database {name} has {rated_database.shape} entries')
         databases[name] = ( rated_database, meta, metrics, xaxis_default, yaxis_default, boundaries, real_boundaries, references )
 
     if args.mode == 'interactive':
        from strep.elex.app import Visualization
-       app = Visualization(databases)
+       app = Visualization(databases, index_mode=INDEXMODE)
        app.run_server(debug=args.debug, host=args.host, port=args.port)
 
     if args.mode == 'paper_results':

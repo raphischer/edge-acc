@@ -6,6 +6,7 @@
         "group": "Performance",
         "weight": 0.25,
         "maximize": true,
+        "symbol": "[%]",
         "independent_of_task": true
     },
     "accuracy_k3": {
@@ -15,6 +16,7 @@
         "group": "Performance",
         "weight": 0.25,
         "maximize": true,
+        "symbol": "[%]",
         "independent_of_task": true
     },
     "accuracy_k5": {
@@ -24,6 +26,7 @@
         "group": "Performance",
         "weight": 0.25,
         "maximize": true,
+        "symbol": "[%]",
         "independent_of_task": true
     },
     "accuracy_k10": {
@@ -33,6 +36,7 @@
         "group": "Performance",
         "weight": 0.25,
         "maximize": true,
+        "symbol": "[%]",
         "independent_of_task": true
     },
     
@@ -41,6 +45,7 @@
         "shortname": "I Power",
         "unit": "wattseconds",
         "group": "Resources",
+        "symbol": "[Ws]",
         "weight": 0.5
     },
     "running_time": {
@@ -48,6 +53,7 @@
         "shortname": "I Time",
         "unit": "seconds",
         "group": "Resources",
+        "symbol": "[s]",
         "weight": 0.5
     }
 }
