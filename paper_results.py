@@ -200,7 +200,7 @@ def create_all(databases):
     fig.write_image(f'improv_table_bars.pdf')
 
 
-    fig = make_subplots(rows=2, cols=2, shared_yaxes=True, vertical_spacing=0.15, horizontal_spacing=0.04)
+    fig = make_subplots(rows=2, cols=2, shared_yaxes=True, vertical_spacing=0.2, horizontal_spacing=0.04)
     # unify axes bins
     b_range1, b_range2, n_bins = (-0.3, 0.3), (-0.1, 0.05), 10
     _, bins = np.histogram([], bins=n_bins, range=b_range1)
@@ -227,7 +227,7 @@ def create_all(databases):
                     name = f'{task} on {host}'
                     fig.add_trace(go.Bar(x=bins, y=occ, name=name, marker_color=col, marker_pattern_shape=PATTERNS[d_idx+1], legendgroup=name, showlegend=idx+s_idx==0), row=s_idx+1, col=idx+1)
                     fig.update_xaxes(title_text=label.replace('{A}', usbacc), row=s_idx+1, col=idx+1)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.6, margin={'l': 0, 'r': 0, 'b': 0, 't': 50},
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.75, margin={'l': 0, 'r': 0, 'b': 0, 't': 50},
                       barmode='stack', xaxis={'categoryorder':'category ascending'},
                       legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5,
                                   entrywidth=0.3, entrywidthmode='fraction'))
