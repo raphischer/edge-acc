@@ -268,10 +268,7 @@ def create_all(databases):
         for i, (env, vals) in enumerate(trace.items()):
             fig.add_trace(
                 go.Scatter(x=model_names, y=vals, name=env, mode='markers+lines', legendgroup=env, showlegend=idx==0,
-                    marker=dict(
-                        color=env_cols[env],
-                        symbol=env_symb[env]
-                    )), row=idx+1, col=1
+                    marker=dict(color=env_cols[env], symbol=env_symb[env]), line=dict(width=1)), row=idx+1, col=1
             )
         fig.update_yaxes(title_text=metric, row=idx+1, col=1)
         if 'Ws' in metric:
