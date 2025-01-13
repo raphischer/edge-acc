@@ -2,14 +2,37 @@
 
 ![Accelerator Experiment Setup](other/pic_wide.jpg?raw=true "Title")
 
-Our corresponding research paper is currently under review and available as a preprint at https://www.researchsquare.com/article/rs-3793927/latest
+Code and results for our corresponding research paper, which was published and presented at the [2024 IEEE/ACM Symposium on Edge Computing (SEC)](https://www.doi.org/10.1109/SEC62691.2024.00015).
 
-## How to explore our experimental results interactively
+## Explore our experimental results interactively
 
-To view our experimental results, make sure you have the the following required python packages installed:
+To view our experimental results, check out the [publicly available webpage]() of our framework for [Sustainable and Trustworthy Reporting](https://github.com/raphischer/strep), which offers the `EdgeAcc` results alongside several other evaluation databases.
+Note that we continue to advance our software - it is work in progress and subject to change, so you might encounter delays, off-times, and slight differences to our paper.
+
+If you want to run the exploration tool locally, make sure you have the the following python packages installed:
 ```numpy, pandas, pint, scipy, dash, dash_bootstrap_components, Pillow, reportlab, fitz, frontend, plotly```
-
 Then start our app via ```main.py``` and open the [webpage](http://localhost:8888/). Besides the interactive plots, you can also inspect the PDF files in our ```paper_results``` directory. 
+
+## Citing
+
+If you appreciate our work and code, please cite [our paper](https://www.doi.org/10.1109/SEC62691.2024.00015) as given by Springer:
+
+A. Van Der Staay, R. Fischer and S. Buschjäger, "Stress-Testing USB Accelerators for Efficient Edge Inference", 2024 IEEE/ACM Symposium on Edge Computing (SEC), Rome, Italy, 2024, pp. 1-14, doi: 10.1109/SEC62691.2024.00015.
+
+or using the bibkey below:
+```
+@INPROCEEDINGS{10818191,
+  author={Van Der Staay, Alexander and Fischer, Raphael and Buschjäger, Sebastian},
+  booktitle={2024 IEEE/ACM Symposium on Edge Computing (SEC)}, 
+  title={Stress-Testing USB Accelerators for Efficient Edge Inference}, 
+  year={2024},
+  volume={},
+  number={},
+  pages={1-14},
+  doi={10.1109/SEC62691.2024.00015}
+}
+```
+
 
 ## Models that we considered:
 **Models compared for Imagenet Classification:**
@@ -84,4 +107,4 @@ Then start our app via ```main.py``` and open the [webpage](http://localhost:888
 - de- and reconnect edgeTPU
 - try different USB cable!
 
-Copyright (c) 2023 Raphael Fischer, Alexander van der Staay, Sebastian Buschjäger
+Copyright (c) 2025 Raphael Fischer, Alexander van der Staay, Sebastian Buschjäger
