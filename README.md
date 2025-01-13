@@ -6,7 +6,7 @@ Code and results for our corresponding research paper, which was published and p
 
 ## Explore our experimental results interactively
 
-To view our experimental results, check out the [publicly available webpage]() of our framework for [Sustainable and Trustworthy Reporting](https://github.com/raphischer/strep), which offers the `EdgeAcc` results alongside several other evaluation databases.
+To view our experimental results, check out the [publicly available webpage](https://strep.onrender.com/?database=EdgeAccUSB) of our framework for [Sustainable and Trustworthy Reporting](https://github.com/raphischer/strep), which offers the `EdgeAcc` results alongside several other evaluation databases.
 Note that we continue to advance our software - it is work in progress and subject to change, so you might encounter delays, off-times, and slight differences to our paper.
 
 If you want to run the exploration tool locally, make sure you have the the following python packages installed:
